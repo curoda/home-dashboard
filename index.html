@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --day-bg-color: #f0e68c;
+            --night-bg-color: #121212;
+            --day-text-color: #333;
+            --night-text-color: #f0f0f0;
+            --day-card-bg: rgba(255, 255, 255, 0.3);
+            --night-card-bg: rgba(30, 30, 30, 0.5);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        
+        body {
+            background-color: var(--day-bg-color);
+            color: var(--day-text-color);
+            transition: background-color 1s, color 1s;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        body.dark-mode {
+            background-color: var(--night-bg-color);
+            color: var(--night-text-color);
+        }
+        
+        .top-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+        }
+        
+        .time-date {
+            font-size: 3rem;
+        }
+        
+        .time-display {
+            font-size: 5rem;
+            font-weight: bold;
+        }
+        
+        .date-display {
+            font-size: 1.8rem;
+        }
+        
+        .weather-now {
+            text-align: right;
+            font-size: 4rem;
+        }
+        
+        .feels-like {
+            font-size: 1.8rem;
+        }
+        
+        .current-day {
+            display: flex;
+            margin: 15px;
+        }
+        
+        .big-day {
+            font-size: 5rem;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        
+        .today-label {
+            font-size: 1.8rem;
+        }
+        
+        .today-weather {
+            margin-left: 20px;
+            display: flex;
+            align-items: center;
+            font-size: 1.8rem;
+        }
+        
+        .middle-section {
+            display: flex;
+            flex: 1;
+            padding: 0 20px;
+        }
+        
+        .today-events {
+            flex: 1;
+            margin-right: 20px;
+        }
+        
+        .event {
+            margin: 15px 0;
+            font-size: 1.4rem;
+        }
+        
+        .event-time {
+            display: inline-block;
+            width: 120px;
+        }
+        
+        .forecast-days {
+            display: flex;
+            flex: 3;
+        }
+        
+        .day-forecast {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            margin: 0 5px;
+            border-left: 3px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        body.dark-mode .day-forecast {
+            border-left: 3px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .day-header {
+            font-size: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .day-date {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        
+        .day-name {
+            font-size: 1.5rem;
+        }
+        
+        .day-temp {
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .day-events {
+            margin-top: 15px;
+        }
+        
+        .day-event {
+            margin: 10px 0;
+            font-size: 1.2rem;
+        }
+        
+        .shopping-list {
+            flex: 1;
+            max-width: 20%;
+            padding: 15px;
+            background-color: var(--day-card-bg);
+            border-radius: 10px;
+            margin-left: 10px;
+            transition: background-color 1s;
+        }
+        
+        body.dark-mode .shopping-list {
+            background-color: var(--night-card-bg);
+        }
+        
+        .shopping-title {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .shopping-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            font-size: 1.2rem;
+        }
+        
+        .shopping-checkbox {
+            margin-right: 10px;
+        }
+        
+        .hourly-forecast {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            margin-top: auto;
+        }
+        
+        .hour-forecast {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .hour-label {
+            font-size: 1.2rem;
+        }
+        
+        .hour-icon {
+            font-size: 2rem;
+            margin: 10px 0;
+        }
+        
+        .hour-precipitation {
+            font-size: 0.9rem;
+            color: #4682B4;
+        }
+        
+        body.dark-mode .hour-precipitation {
+            color: #87CEFA;
+        }
+        
+        .hour-temp {
+            font-size: 1.2rem;
+        }
+        
+        .settings-icon {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            opacity: 0.3;
+            transition: opacity 0.3s;
+        }
+        
+        .settings-icon:hover {
+            opacity: 1;
+        }
+        
+        .settings-panel {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            height: 100vh;
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
+            transition: right 0.3s;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        
+        body.dark-mode .settings-panel {
+            background-color: rgba(30, 30, 30, 0.95);
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        .settings-panel.open {
+            right: 0;
+        }
+        
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .settings-title {
+            font-size: 1.8rem;
+        }
+        
+        .close-settings {
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .settings-section {
+            margin-bottom: 20px;
+        }
+        
+        .settings-section-title {
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+        }
+        
+        .settings-option {
+            margin: 10px 0;
+        }
+        
+        .settings-label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .settings-input, .settings-select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .settings-checkbox {
+            margin-right: 10px;
+        }
+        
+        .settings-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        
+        .calendar-list {
+            margin: 10px 0;
+        }
+        
+        .calendar-item {
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .color-picker {
+            margin-left: 10px;
+            width: 25px;
+            height: 25px;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .widget-control {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+        }
+        
+        /* Event color coding */
+        .cal-0 { border-left: 4px solid #4285F4; padding-left: 8px; }
+        .cal-1 { border-left: 4px solid #EA4335; padding-left: 8px; }
+        .cal-2 { border-left: 4px solid #FBBC05; padding-left: 8px; }
+        .cal-3 { border-left: 4px solid #34A853; padding-left: 8px; }
+        .cal-4 { border-left: 4px solid #8E24AA; padding-left: 8px; }
+        .cal-5 { border-left: 4px solid #039BE5; padding-left: 8px; }
+        
+        /* Loading overlay */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .spinner {
+            border: 16px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 16px solid #3498db;
+            width: 120px;
+            height: 120px;
+            animation: spin 2s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Hide settings panel toggle on TVs/kiosk mode */
+        .kiosk-mode .settings-icon {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="settings-icon">
+        <i class="fas fa-cog"></i>
+    </div>
+
+    <div class="settings-panel">
+        <div class="settings-header">
+            <div class="settings-title">Dashboard Settings</div>
+            <div class="close-settings"><i class="fas fa-times"></i></div>
+        </div>
+        
+        <div class="settings-section">
+            <div class="settings-section-title">Location</div>
+            <div class="settings-option">
+                <label class="settings-label">Use browser location:</label>
+                <input type="checkbox" id="use-browser-location" class="settings-checkbox" checked>
+            </div>
+            <div class="settings-option" id="manual-location-input" style="display: none;">
+                <label class="settings-label">City:</label>
+                <input type="text" id="location-city" class="settings-input" placeholder="Arlington" value="Arlington">
+                <label class="settings-label">State/Region:</label>
+                <input type="text" id="location-state" class="settings-input" placeholder="VA" value="VA">
+                <label class="settings-label">Zip/Postal Code:</label>
+                <input type="text" id="location-zip" class="settings-input" placeholder="22201" value="22201">
+                <label class="settings-label">Country:</label>
+                <input type="text" id="location-country" class="settings-input" placeholder="USA" value="USA">
+            </div>
+        </div>
+        
+        <div class="settings-section">
+            <div class="settings-section-title">Weather</div>
+            <div class="settings-option">
+                <label class="settings-label">Weather API Key (OpenWeatherMap):</label>
+                <input type="text" id="weather-api-key" class="settings-input" placeholder="Enter your API key">
+                <a href="https://home.openweathermap.org/users/sign_up" target="_blank">Get a free API key</a>
+            </div>
+            <div class="settings-option">
+                <label class="settings-label">Units:</label>
+                <select id="weather-units" class="settings-select">
+                    <option value="imperial">Fahrenheit (US)</option>
+                    <option value="metric">Celsius (Metric)</option>
+                </select>
+            </div>
+            <div class="settings-option">
+                <label class="settings-label">Refresh interval (minutes):</label>
+                <input type="number" id="weather-refresh" class="settings-input" min="5" max="60" value="15">
+            </div>
+        </div>
+        
+        <div class="settings-section">
+            <div class="settings-section-title">Calendar</div>
+            <div class="settings-option">
+                <label class="settings-label">Google Calendar Client ID:</label>
+                <input type="text" id="gcal-client-id" class="settings-input" placeholder="Enter your Client ID">
+            </div>
+            <div class="settings-option">
+                <label class="settings-label">Google Calendar API Key:</label>
+                <input type="text" id="gcal-api-key" class="settings-input" placeholder="Enter your API key">
+            </div>
+            <div class="settings-option">
+                <button id="authorize-gcal" class="settings-button">Authorize Google Calendar</button>
+                <button id="signout-gcal" class="settings-button" style="background-color: #d32f2f; display: none;">Sign Out</button>
+            </div>
+            <div class="settings-option">
+                <label class="settings-label">Calendars to display:</label>
+                <div id="calendar-list" class="calendar-list">
+                    <!-- Calendar list will be dynamically populated -->
+                </div>
+            </div>
+            <div class="settings-option">
+                <label class="settings-label">Refresh interval (minutes):</label>
+                <input type="number" id="calendar-refresh" class="settings-input" min="1" max="60" value="5">
+            </div>
+        </div>
+        
+        <div class="settings-section">
+            <div class="settings-section-title">Shopping List</div>
+            <div class="settings-option">
+                <label class="settings-label">Service:</label>
+                <select id="shopping-service" class="settings-select">
+                    <option value="google">Google Tasks</option>
+                    <option value="todoist">Todoist</option>
+                </select>
+            </div>
+            
+            <div id="todoist-settings" style="display: none;">
+                <div class="settings-option">
+                    <label class="settings-label">Todoist API Token:</label>
+                    <input type="text" id="todoist-api-token" class="settings-input" placeholder="Enter your API token">
+                    <a href="https://todoist.com/app/settings/integrations" target="_blank">Get your API token</a>
+                </div>
+                <div class="settings-option">
+                    <label class="settings-label">Project name for shopping list:</label>
+                    <input type="text" id="todoist-project" class="settings-input" placeholder="Shopping" value="Shopping">
+                </div>
+            </div>
+            
+            <div id="google-tasks-settings">
+                <div class="settings-option">
+                    <label class="settings-label">Task List Name:</label>
+                    <input type="text" id="gtasks-list" class="settings-input" placeholder="Shopping" value="Shopping">
+                </div>
+                <div class="settings-option">
+                    <button id="authorize-gtasks" class="settings-button">Authorize Google Tasks</button>
+                </div>
+            </div>
+            
+            <div class="settings-option">
+                <label class="settings-label">Refresh interval (minutes):</label>
+                <input type="number" id="shopping-refresh" class="settings-input" min="1" max="60" value="5">
+            </div>
+        </div>
+        
+        <div class="settings-section">
+            <div class="settings-section-title">Display</div>
+            <div class="settings-option">
+                <label class="settings-label">Dark mode hours:</label>
+                <div class="settings-time-range">
+                    <label>Start: </label>
+                    <input type="time" id="dark-mode-start" class="settings-input" value="19:00">
+                    <label>End: </label>
+                    <input type="time" id="dark-mode-end" class="settings-input" value="07:00">
+                </div>
+            </div>
+            <div class="settings-option">
+                <label class="settings-label">Kiosk mode (hide settings toggle):</label>
+                <input type="checkbox" id="kiosk-mode" class="settings-checkbox">
+            </div>
+        </div>
+        
+        <div class="settings-section">
+            <div class="settings-section-title">Widgets</div>
+            <div class="settings-option">
+                <div class="widget-control">
+                    <label>Weather</label>
+                    <input type="checkbox" id="widget-weather" class="settings-checkbox" checked>
+                </div>
+                <div class="widget-control">
+                    <label>Calendar</label>
+                    <input type="checkbox" id="widget-calendar" class="settings-checkbox" checked>
+                </div>
+                <div class="widget-control">
+                    <label>Shopping List</label>
+                    <input type="checkbox" id="widget-shopping" class="settings-checkbox" checked>
+                </div>
+                <div class="widget-control">
+                    <label>Hourly Forecast</label>
+                    <input type="checkbox" id="widget-hourly" class="settings-checkbox" checked>
+                </div>
+            </div>
+        </div>
+        
+        <div class="settings-section">
+            <div class="settings-option">
+                <button id="save-settings" class="settings-button">Save Settings</button>
+                <button id="reset-settings" class="settings-button" style="background-color: #d32f2f;">Reset to Defaults</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="top-row">
+        <div class="time-date">
+            <div class="time-display">8:12<sup>51</sup></div>
+            <div class="date-display">Friday Feb 28</div>
+        </div>
+        <div class="weather-now">
+            <div class="temp-display">41° <i class="fas fa-sun"></i></div>
+            <div class="feels-like">Feels like 34</div>
+        </div>
+    </div>
+
+    <div class="current-day">
+        <div class="big-day">28</div>
+        <div class="today-label">Today</div>
+        <div class="today-weather">
+            <i class="fas fa-cloud-sun"></i> 40° / 56°
+        </div>
+    </div>
+
+    <div class="middle-section">
+        <div class="today-events">
+            <div class="event">
+                <span class="event-time">10:30 AM</span>
+                <span class="event-title cal-0">Dentist mom</span>
+            </div>
+            <div class="event">
+                <span class="event-time">1:00 PM</span>
+                <span class="event-title cal-1">Kitchen design</span>
+            </div>
+        </div>
+
+        <div class="forecast-days">
+            <div class="day-forecast">
+                <div class="day-header">
+                    <div>
+                        <div class="day-date">01</div>
+                        <div class="day-name">March, Saturday</div>
+                    </div>
+                    <div class="day-temp">
+                        <i class="fas fa-cloud"></i> 58°
+                    </div>
+                </div>
+                <div class="day-events">
+                    <div class="day-event">
+                        <span class="event-time">12:30 PM</span>
+                        <span class="event-title cal-2">Michelle for lunch</span>
+                    </div>
+                    <div class="day-event">
+                        <span class="event-time">1:30 PM</span>
+                        <span class="event-title cal-0">Golf lesson</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="day-forecast">
+                <div class="day-header">
+                    <div>
+                        <div class="day-date">02</div>
+                        <div class="day-name">March, Sunday</div>
+                    </div>
+                    <div class="day-temp">
+                        <i class="fas fa-cloud-sun"></i> 40°
+                    </div>
+                </div>
+                <div class="day-events">
+                    <div class="day-event">
+                        <span class="event-time">3:00 PM</span>
+                        <span class="event-title cal-1">TPEG</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="day-forecast">
+                <div class="day-header">
+                    <div>
+                        <div class="day-date">03</div>
+                        <div class="day-name">March, Monday</div>
+                    </div>
+                    <div class="day-temp">
+                        <i class="fas fa-cloud-sun"></i> 43°
+                    </div>
+                </div>
+                <div class="day-events">
+                    <div class="day-event">
+                        <span>No events</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="shopping-list">
+            <div class="shopping-title">Shopping</div>
+            <div class="shopping-item">
+                <input type="checkbox" class="shopping-checkbox" disabled>
+                <span class="shopping-text">Eggs</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="hourly-forecast">
+        <div class="hour-forecast">
+            <div class="hour-label">9am</div>
+            <div class="hour-icon"><i class="fas fa-sun"></i></div>
+            <div class="hour-precipitation">0%</div>
+            <div class="hour-temp">45°</div>
+        </div>
+        <div class="hour-forecast">
+            <div class="hour-label">10am</div>
+            <div class="hour-icon"><i class="fas fa-sun"></i></div>
+            <div class="hour-precipitation">0%</div>
+            <div class="hour-temp">47°</div>
+        </div>
+        <div class="hour-forecast">
+            <div class="hour-label">11am</div>
+            <div class="hour-icon"><i class="fas fa-sun"></i></div>
+            <div class="hour-precipitation">0%</div>
+            <div class="hour-temp">48°</div>
+        </div>
+        <div class="hour-forecast">
+            <div class="hour-label">12pm</div>
+            <div class="hour-icon"><i class="fas fa-sun"></i></div>
+            <div class="hour-precipitation">0%</div>
+            <div class="hour-temp">50°</div>
+        </div>
+        <div class="hour-forecast">
+            <div class="hour-label">1pm</div>
+            <div class="hour-icon"><i class="fas fa-sun"></i></div>
+            <div class="hour-precipitation">0%</div>
+            <div class="hour-temp">51°</div>
+        </div>
+        <div class="hour-forecast">
+            <div class="hour-label">2pm</div>
+            <div class="hour-icon"><i class="fas fa-sun"></i></div>
+            <div class="hour-precipitation">0%</div>
+            <div class="hour-temp">52°</div>
+        </div>
+        <div class="hour-forecast">
+            <div class="hour-label">3pm</div>
+            <div class="hour-icon"><i class="fas fa-cloud-sun"></i></div>
+            <div class="hour-precipitation">0%</div>
+            <div class="hour-temp">53°</div>
+        </div>
+        <div class="hour-forecast">
+            <div class="hour-label">4pm</div>
+            <div class="hour-icon"><i class="fas fa-sun"></i></div>
+            <div class="hour-precipitation">0%</div>
+            <div class="hour-temp">54°</div>
+        </div>
+    </div>
+
+    <script src="https://accounts.google.com/gsi/client"></script>
+    <script>
+        // Settings management
+        let settings = {
+            location: {
+                useBrowser: true,
+                city: "Arlington",
+                state: "VA",
+                zip: "22201",
+                country: "USA",
+                lat: null,
+                lon: null
+            },
+            weather: {
+                apiKey: "",
+                units: "imperial",
+                refreshInterval: 15
+            },
+            calendar: {
+                clientId: "",
+                apiKey: "",
+                calendars: [],
+                refreshInterval: 5
+            },
+            shopping: {
+                service: "google",
+                todoistToken: "",
+                todoistProject: "Shopping",
+                gTasksList: "Shopping",
+                refreshInterval: 5
+            },
+            display: {
+                darkModeStart: "19:00",
+                darkModeEnd: "07:00",
+                kioskMode: false
+            },
+            widgets: {
+                weather: true,
+                calendar: true,
+                shopping: true,
+                hourly: true
+            }
+        };
+
+        // Load settings from localStorage if available
+        function loadSettings() {
+            const savedSettings = localStorage.getItem('dashboardSettings');
+            if (savedSettings) {
+                settings = JSON.parse(savedSettings);
+                
+                // Apply settings to form fields
+                document.getElementById('use-browser-location').checked = settings.location.useBrowser;
+                document.getElementById('location-city').value = settings.location.city;
+                document.getElementById('location-state').value = settings.location.state;
+                document.getElementById('location-zip').value = settings.location.zip;
+                document.getElementById('location-country').value = settings.location.country;
+                
+                document.getElementById('weather-api-key').value = settings.weather.apiKey;
+                document.getElementById('weather-units').value = settings.weather.units;
+                document.getElementById('weather-refresh').value = settings.weather.refreshInterval;
+                
+                document.getElementById('gcal-client-id').value = settings.calendar.clientId;
+                document.getElementById('gcal-api-key').value = settings.calendar.apiKey;
+                document.getElementById('calendar-refresh').value = settings.calendar.refreshInterval;
+                
+                document.getElementById('shopping-service').value = settings.shopping.service;
+                document.getElementById('todoist-api-token').value = settings.shopping.todoistToken;
+                document.getElementById('todoist-project').value = settings.shopping.todoistProject;
+                document.getElementById('gtasks-list').value = settings.shopping.gTasksList;
+                document.getElementById('shopping-refresh').value = settings.shopping.refreshInterval;
+                
+                document.getElementById('dark-mode-start').value = settings.display.darkModeStart;
+                document.getElementById('dark-mode-end').value = settings.display.darkModeEnd;
+                document.getElementById('kiosk-mode').checked = settings.display.kioskMode;
+                
+                document.getElementById('widget-weather').checked = settings.widgets.weather;
+                document.getElementById('widget-calendar').checked = settings.widgets.calendar;
+                document.getElementById('widget-shopping').checked = settings.widgets.shopping;
+                document.getElementById('widget-hourly').checked = settings.widgets.hourly;
+                
+                // Toggle manual location inputs
+                document.getElementById('manual-location-input').style.display = 
+                    settings.location.useBrowser ? 'none' : 'block';
+                
+                // Toggle shopping service settings
+                document.getElementById('todoist-settings').style.display = 
+                    settings.shopping.service === 'todoist' ? 'block' : 'none';
+                document.getElementById('google-tasks-settings').style.display = 
+                    settings.shopping.service === 'google' ? 'block' : 'none';
+                
+                // Apply kiosk mode if enabled
+                if (settings.display.kioskMode) {
+                    document.body.classList.add('kiosk-mode');
+                }
+            }
+        }
+
+        // Save settings to localStorage
+        function saveSettings() {
+            // Collect data from form fields
+            settings.location.useBrowser = document.getElementById('use-browser-location').checked;
+            settings.location.city = document.getElementById('location-city').value;
+            settings.location.state = document.getElementById('location-state').value;
+            settings.location.zip = document.getElementById('location-zip').value;
+            settings.location.country = document.getElementById('location-country').value;
+            
+            settings.weather.apiKey = document.getElementById('weather-api-key').value;
+            settings.weather.units = document.getElementById('weather-units').value;
+            settings.weather.refreshInterval = parseInt(document.getElementById('weather-refresh').value);
+            
+            settings.calendar.clientId = document.getElementById('gcal-client-id').value;
+            settings.calendar.apiKey = document.getElementById('gcal-api-key').value;
+            settings.calendar.refreshInterval = parseInt(document.getElementById('calendar-refresh').value);
+            
+            settings.shopping.service = document.getElementById('shopping-service').value;
+            settings.shopping.todoistToken = document.getElementById('todoist-api-token').value;
+            settings.shopping.todoistProject = document.getElementById('todoist-project').value;
+            settings.shopping.gTasksList = document.getElementById('gtasks-list').value;
+            settings.shopping.refreshInterval = parseInt(document.getElementById('shopping-refresh').value);
+            
+            settings.display.darkModeStart = document.getElementById('dark-mode-start').value;
+            settings.display.darkModeEnd = document.getElementById('dark-mode-end').value;
+            settings.display.kioskMode = document.getElementById('kiosk-mode').checked;
+            
+            settings.widgets.weather = document.getElementById('widget-weather').checked;
+            settings.widgets.calendar = document.getElementById('widget-calendar').checked;
+            settings.widgets.shopping = document.getElementById('widget-shopping').checked;
+            settings.widgets.hourly = document.getElementById('widget-hourly').checked;
+            
+            // Save to localStorage
+            localStorage.setItem('dashboardSettings', JSON.stringify(settings));
+            
+            // Apply kiosk mode
+            if (settings.display.kioskMode) {
+                document.body.classList.add('kiosk-mode');
+            } else {
+                document.body.classList.remove('kiosk-mode');
+            }
+            
+            // Reload data
+            initializeDashboard();
+            
+            // Close settings panel
+            document.querySelector('.settings-panel').classList.remove('open');
+            
+            // Show success message
+            alert('Settings saved successfully!');
+        }
+
+        // Reset settings to defaults
+        function resetSettings() {
+            if (confirm('Are you sure you want to reset all settings to defaults?')) {
+                localStorage.removeItem('dashboardSettings');
+                location.reload();
+            }
+        }
+
+        // Weather functions
+        async function getWeatherData() {
+            if (!settings.weather.apiKey) {
+                console.error('Weather API key not set');
+                document.querySelector('.weather-now').innerHTML = '<div>Please set weather API key</div>';
+                return null;
+            }
+            
+            try {
+                // Get coordinates
+                let lat, lon;
+                if (settings.location.lat && settings.location.lon) {
+                    lat = settings.location.lat;
+                    lon = settings.location.lon;
+                } else {
+                    // Geocode from city
+                    const geocodeUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${settings.location.city},${settings.location.state},${settings.location.country}&limit=1&appid=${settings.weather.apiKey}`;
+                    const geocodeResponse = await fetch(geocodeUrl);
+                    const geocodeData = await geocodeResponse.json();
+                    
+                    if (geocodeData.length === 0) {
+                        throw new Error('Location not found');
+                    }
+                    
+                    lat = geocodeData[0].lat;
+                    lon = geocodeData[0].lon;
+                    
+                    // Save for future use
+                    settings.location.lat = lat;
+                    settings.location.lon = lon;
+                    localStorage.setItem('dashboardSettings', JSON.stringify(settings));
+                }
+                
+                // Get current weather
+                const currentUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=${settings.weather.units}&appid=${settings.weather.apiKey}`;
+                const currentResponse = await fetch(currentUrl);
+                const currentData = await currentResponse.json();
+                
+                // Get forecast
+                const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=${settings.weather.units}&appid=${settings.weather.apiKey}`;
+                const forecastResponse = await fetch(forecastUrl);
+                const forecastData = await forecastResponse.json();
+                
+                return {
+                    current: currentData,
+                    forecast: forecastData
+                };
+            } catch (error) {
+                console.error('Error fetching weather data:', error);
+                document.querySelector('.weather-now').innerHTML = '<div>Weather data unavailable</div>';
+                return null;
+            }
+        }
+
+        function getWeatherIcon(iconCode) {
+            // Map OpenWeatherMap icon codes to Font Awesome icons
+            const iconMap = {
+                '01d': 'fas fa-sun',           // clear sky day
+                '01n': 'fas fa-moon',          // clear sky night
+                '02d': 'fas fa-cloud-sun',     // few clouds day
+                '02n': 'fas fa-cloud-moon',    // few clouds night
+                '03d': 'fas fa-cloud',         // scattered clouds
+                '03n': 'fas fa-cloud',
+                '04d': 'fas fa-cloud',         // broken clouds
+                '04n': 'fas fa-cloud',
+                '09d': 'fas fa-cloud-showers-heavy', // shower rain
+                '09n': 'fas fa-cloud-showers-heavy',
+                '10d': 'fas fa-cloud-sun-rain',     // rain day
+                '10n': 'fas fa-cloud-moon-rain',    // rain night
+                '11d': 'fas fa-bolt',          // thunderstorm
+                '11n': 'fas fa-bolt',
+                '13d': 'fas fa-snowflake',     // snow
+                '13n': 'fas fa-snowflake',
+                '50d': 'fas fa-smog',          // mist
+                '50n': 'fas fa-smog'
+            };
+            
+            return iconMap[iconCode] || 'fas fa-question';
+        }
+
+        function updateWeatherDisplay(weatherData) {
+            if (!weatherData) return;
+            
+            const current = weatherData.current;
+            const forecast = weatherData.forecast;
+            
+            // Update current weather
+            const temp = Math.round(current.main.temp);
+            const feelsLike = Math.round(current.main.feels_like);
+            const iconClass = getWeatherIcon(current.weather[0].icon);
+            
+            document.querySelector('.temp-display').innerHTML = `${temp}° <i class="${iconClass}"></i>`;
+            document.querySelector('.feels-like').textContent = `Feels like ${feelsLike}`;
+            
+            // Update today's high/low
+            const todayHigh = Math.round(current.main.temp_max);
+            const todayLow = Math.round(current.main.temp_min);
+            const todayIcon = getWeatherIcon(current.weather[0].icon);
+            
+            document.querySelector('.today-weather').innerHTML = 
+                `<i class="${todayIcon}"></i> ${todayLow}° / ${todayHigh}°`;
+            
+            // Group forecast by day
+            const days = {};
+            forecast.list.forEach(item => {
+                const date = new Date(item.dt * 1000);
+                const day = date.toISOString().split('T')[0];
+                
+                if (!days[day]) {
+                    days[day] = {
+                        temps: [],
+                        icons: [],
+                        items: []
+                    };
+                }
+                
+                days[day].temps.push(item.main.temp);
+                days[day].icons.push(item.weather[0].icon);
+                days[day].items.push(item);
+            });
+            
+            // Update daily forecasts (skip today)
+            const dayKeys = Object.keys(days).sort();
+            const forecastElements = document.querySelectorAll('.day-forecast');
+            
+            for (let i = 0; i < Math.min(dayKeys.length - 1, forecastElements.length); i++) {
+                const dayData = days[dayKeys[i + 1]];
+                const dayElement = forecastElements[i];
+                
+                // Calculate high temp for the day
+                const high = Math.round(Math.max(...dayData.temps));
+                
+                // Get most common icon for the day
+                const iconCounts = {};
+                dayData.icons.forEach(icon => {
+                    iconCounts[icon] = (iconCounts[icon] || 0) + 1;
+                });
+                let mostCommonIcon = dayData.icons[0];
+                let maxCount = 0;
+                for (const icon in iconCounts) {
+                    if (iconCounts[icon] > maxCount) {
+                        maxCount = iconCounts[icon];
+                        mostCommonIcon = icon;
+                    }
+                }
+                
+                const iconClass = getWeatherIcon(mostCommonIcon);
+                
+                // Update day forecast display
+                const dayTemp = dayElement.querySelector('.day-temp');
+                dayTemp.innerHTML = `<i class="${iconClass}"></i> ${high}°`;
+            }
+            
+            // Update hourly forecast
+            const hourlyItems = forecast.list.slice(0, 8); // Next 8 time periods (3 hours each)
+            const hourlyElements = document.querySelectorAll('.hour-forecast');
+            
+            hourlyItems.forEach((item, index) => {
+                if (index < hourlyElements.length) {
+                    const hourElement = hourlyElements[index];
+                    const date = new Date(item.dt * 1000);
+                    const hour = date.getHours();
+                    const ampm = hour >= 12 ? 'pm' : 'am';
+                    const hour12 = hour % 12 || 12;
+                    
+                    const temp = Math.round(item.main.temp);
+                    const iconClass = getWeatherIcon(item.weather[0].icon);
+                    const precipitation = item.pop ? Math.round(item.pop * 100) : 0;
+                    
+                    hourElement.querySelector('.hour-label').textContent = `${hour12}${ampm}`;
+                    hourElement.querySelector('.hour-icon').innerHTML = `<i class="${iconClass}"></i>`;
+                    hourElement.querySelector('.hour-precipitation').textContent = `${precipitation}%`;
+                    hourElement.querySelector('.hour-temp').textContent = `${temp}°`;
+                }
+            });
+        }
+
+        // Calendar functions
+        let gapi = null;
+        let googleAuthToken = null;
+
+        async function initializeGoogleCalendar() {
+            if (!settings.calendar.clientId || !settings.calendar.apiKey) {
+                console.error('Google Calendar credentials not set');
+                return;
+            }
+            
+            try {
+                // Load the Google API client library
+                gapi = window.gapi;
+                await new Promise(resolve => gapi.load('client:auth2', resolve));
+                
+                await gapi.client.init({
+                    apiKey: settings.calendar.apiKey,
+                    clientId: settings.calendar.clientId,
+                    discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
+                    scope: 'https://www.googleapis.com/auth/calendar.readonly'
+                });
+                
+                // Check if user is already signed in
+                if (gapi.auth2.getAuthInstance().isSignedIn.get()) {
+                    googleAuthToken = gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token;
+                    document.getElementById('authorize-gcal').style.display = 'none';
+                    document.getElementById('signout-gcal').style.display = 'inline-block';
+                    await loadCalendarList();
+                    await loadCalendarEvents();
+                } else {
+                    document.getElementById('authorize-gcal').style.display = 'inline-block';
+                    document.getElementById('signout-gcal').style.display = 'none';
+                }
+                
+                // Set up auth change listener
+                gapi.auth2.getAuthInstance().isSignedIn.listen(async (isSignedIn) => {
+                    if (isSignedIn) {
+                        googleAuthToken = gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token;
+                        document.getElementById('authorize-gcal').style.display = 'none';
+                        document.getElementById('signout-gcal').style.display = 'inline-block';
+                        await loadCalendarList();
+                        await loadCalendarEvents();
+                    } else {
+                        document.getElementById('authorize-gcal').style.display = 'inline-block';
+                        document.getElementById('signout-gcal').style.display = 'none';
+                    }
+                });
+            } catch (error) {
+                console.error('Error initializing Google Calendar:', error);
+            }
+        }
+
+        async function loadCalendarList() {
+            try {
+                const response = await gapi.client.calendar.calendarList.list();
+                const calendars = response.result.items;
+                settings.calendar.calendars = calendars.map(cal => ({
+                    id: cal.id,
+                    summary: cal.summary,
+                    backgroundColor: cal.backgroundColor,
+                    selected: true
+                }));
+                
+                // Update settings storage
+                localStorage.setItem('dashboardSettings', JSON.stringify(settings));
+                
+                // Update calendar list in settings panel
+                const calendarListElement = document.getElementById('calendar-list');
+                calendarListElement.innerHTML = '';
+                
+                calendars.forEach((calendar, index) => {
+                    const calItem = document.createElement('div');
+                    calItem.className = 'calendar-item';
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = `calendar-${index}`;
+                    checkbox.className = 'settings-checkbox';
+                    checkbox.checked = true;
+                    checkbox.dataset.calendarId = calendar.id;
+                    
+                    const label = document.createElement('label');
+                    label.htmlFor = `calendar-${index}`;
+                    label.textContent = calendar.summary;
+                    
+                    const colorPicker = document.createElement('input');
+                    colorPicker.type = 'color';
+                    colorPicker.className = 'color-picker';
+                    colorPicker.value = calendar.backgroundColor;
+                    colorPicker.dataset.calendarId = calendar.id;
+                    
+                    calItem.appendChild(checkbox);
+                    calItem.appendChild(label);
+                    calItem.appendChild(colorPicker);
+                    
+                    calendarListElement.appendChild(calItem);
+                    
+                    // Add event listeners
+                    checkbox.addEventListener('change', (e) => {
+                        const calId = e.target.dataset.calendarId;
+                        const calIndex = settings.calendar.calendars.findIndex(c => c.id === calId);
+                        if (calIndex !== -1) {
+                            settings.calendar.calendars[calIndex].selected = e.target.checked;
+                            localStorage.setItem('dashboardSettings', JSON.stringify(settings));
+                            loadCalendarEvents();
+                        }
+                    });
+                    
+                    colorPicker.addEventListener('change', (e) => {
+                        const calId = e.target.dataset.calendarId;
+                        const calIndex = settings.calendar.calendars.findIndex(c => c.id === calId);
+                        if (calIndex !== -1) {
+                            settings.calendar.calendars[calIndex].backgroundColor = e.target.value;
+                            localStorage.setItem('dashboardSettings', JSON.stringify(settings));
+                            loadCalendarEvents();
+                        }
+                    });
+                });
+            } catch (error) {
+                console.error('Error loading calendar list:', error);
+            }
+        }
+
+        async function loadCalendarEvents() {
+            try {
+                const now = new Date();
+                const endDate = new Date();
+                endDate.setDate(now.getDate() + 3); // Today + 3 days
+                
+                const selectedCalendars = settings.calendar.calendars.filter(cal => cal.selected);
+                if (selectedCalendars.length === 0) {
+                    return;
+                }
+                
+                const allEvents = [];
+                
+                for (const calendar of selectedCalendars) {
+                    const response = await gapi.client.calendar.events.list({
+                        'calendarId': calendar.id,
+                        'timeMin': now.toISOString(),
+                        'timeMax': endDate.toISOString(),
+                        'singleEvents': true,
+                        'orderBy': 'startTime'
+                    });
+                    
+                    const events = response.result.items;
+                    
+                    events.forEach(event => {
+                        // Add calendar info to event
+                        event.calendarId = calendar.id;
+                        event.calendarIndex = settings.calendar.calendars.findIndex(c => c.id === calendar.id);
+                        event.backgroundColor = calendar.backgroundColor;
+                        allEvents.push(event);
+                    });
+                }
+                
+                // Sort all events by start time
+                allEvents.sort((a, b) => {
+                    const aStart = a.start.dateTime ? new Date(a.start.dateTime) : new Date(a.start.date);
+                    const bStart = b.start.dateTime ? new Date(b.start.dateTime) : new Date(b.start.date);
+                    return aStart - bStart;
+                });
+                
+                // Group events by day
+                const eventsByDay = {};
+                
+                for (let i = 0; i < 4; i++) { // Today + 3 days
+                    const date = new Date();
+                    date.setDate(now.getDate() + i);
+                    const dateKey = date.toISOString().split('T')[0];
+                    eventsByDay[dateKey] = [];
+                }
+                
+                allEvents.forEach(event => {
+                    const start = event.start.dateTime ? new Date(event.start.dateTime) : new Date(event.start.date);
+                    const dateKey = start.toISOString().split('T')[0];
+                    
+                    if (eventsByDay[dateKey]) {
+                        eventsByDay[dateKey].push(event);
+                    }
+                });
+                
+                // Update today's events
+                const todayKey = now.toISOString().split('T')[0];
+                const todayEvents = eventsByDay[todayKey] || [];
+                const todayEventsElement = document.querySelector('.today-events');
+                
+                if (todayEvents.length === 0) {
+                    todayEventsElement.innerHTML = '<div class="event"><span>No events today</span></div>';
+                } else {
+                    todayEventsElement.innerHTML = '';
+                    todayEvents.forEach(event => {
+                        const eventElement = document.createElement('div');
+                        eventElement.className = 'event';
+                        
+                        const timeElement = document.createElement('span');
+                        timeElement.className = 'event-time';
+                        
+                        if (event.start.dateTime) {
+                            const startTime = new Date(event.start.dateTime);
+                            const hours = startTime.getHours();
+                            const minutes = startTime.getMinutes();
+                            const ampm = hours >= 12 ? 'PM' : 'AM';
+                            const hours12 = hours % 12 || 12;
+                            timeElement.textContent = `${hours12}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+                        } else {
+                            timeElement.textContent = 'All day';
+                        }
+                        
+                        const titleElement = document.createElement('span');
+                        titleElement.className = `event-title cal-${event.calendarIndex}`;
+                        titleElement.textContent = event.summary;
+                        
+                        // Apply calendar color
+                        titleElement.style.borderLeftColor = event.backgroundColor;
+                        
+                        eventElement.appendChild(timeElement);
+                        eventElement.appendChild(titleElement);
+                        
+                        todayEventsElement.appendChild(eventElement);
+                    });
+                }
+                
+                // Update future days events
+                const dateKeys = Object.keys(eventsByDay).sort();
+                const forecastElements = document.querySelectorAll('.day-forecast');
+                
+                for (let i = 0; i < Math.min(dateKeys.length - 1, forecastElements.length); i++) {
+                    const dateKey = dateKeys[i + 1]; // Skip today
+                    const dayEvents = eventsByDay[dateKey] || [];
+                    const dayElement = forecastElements[i];
+                    
+                    // Update header date
+                    const date = new Date(dateKey);
+                    const dayNum = date.getDate().toString().padStart(2, '0');
+                    const monthName = date.toLocaleString('default', { month: 'long' });
+                    const dayName = date.toLocaleString('default', { weekday: 'long' });
+                    
+                    dayElement.querySelector('.day-date').textContent = dayNum;
+                    dayElement.querySelector('.day-name').textContent = `${monthName}, ${dayName}`;
+                    
+                    // Update events
+                    const dayEventsElement = dayElement.querySelector('.day-events');
+                    
+                    if (dayEvents.length === 0) {
+                        dayEventsElement.innerHTML = '<div class="day-event"><span>No events</span></div>';
+                    } else {
+                        dayEventsElement.innerHTML = '';
+                        dayEvents.slice(0, 3).forEach(event => { // Limit to 3 events per day for space
+                            const eventElement = document.createElement('div');
+                            eventElement.className = 'day-event';
+                            
+                            const timeElement = document.createElement('span');
+                            timeElement.className = 'event-time';
+                            
+                            if (event.start.dateTime) {
+                                const startTime = new Date(event.start.dateTime);
+                                const hours = startTime.getHours();
+                                const minutes = startTime.getMinutes();
+                                const ampm = hours >= 12 ? 'PM' : 'AM';
+                                const hours12 = hours % 12 || 12;
+                                timeElement.textContent = `${hours12}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+                            } else {
+                                timeElement.textContent = 'All day';
+                            }
+                            
+                            const titleElement = document.createElement('span');
+                            titleElement.className = `event-title cal-${event.calendarIndex}`;
+                            titleElement.textContent = event.summary;
+                            
+                            // Apply calendar color
+                            titleElement.style.borderLeftColor = event.backgroundColor;
+                            
+                            eventElement.appendChild(timeElement);
+                            eventElement.appendChild(titleElement);
+                            
+                            dayEventsElement.appendChild(eventElement);
+                        });
+                        
+                        // Add indicator if there are more events
+                        if (dayEvents.length > 3) {
+                            const moreElement = document.createElement('div');
+                            moreElement.className = 'day-event';
+                            moreElement.textContent = `+ ${dayEvents.length - 3} more events`;
+                            dayEventsElement.appendChild(moreElement);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading calendar events:', error);
+            }
+        }
+
+        // Shopping List functions
+        async function loadShoppingList() {
+            const shoppingListElement = document.querySelector('.shopping-list');
+            const titleElement = shoppingListElement.querySelector('.shopping-title');
+            
+            // Clear existing items
+            const items = shoppingListElement.querySelectorAll('.shopping-item');
+            items.forEach(item => item.remove());
+            
+            if (settings.shopping.service === 'todoist') {
+                await loadTodoistList(shoppingListElement, titleElement);
+            } else {
+                await loadGoogleTasksList(shoppingListElement, titleElement);
+            }
+        }
+
+        async function loadTodoistList(container, titleElement) {
+            if (!settings.shopping.todoistToken) {
+                titleElement.textContent = 'Shopping (Set up Todoist)';
+                return;
+            }
+            
+            try {
+                // First get all projects
+                const projectsResponse = await fetch('https://api.todoist.com/rest/v2/projects', {
+                    headers: {
+                        'Authorization': `Bearer ${settings.shopping.todoistToken}`
+                    }
+                });
+                
+                if (!projectsResponse.ok) {
+                    throw new Error('Failed to fetch Todoist projects');
+                }
+                
+                const projects = await projectsResponse.json();
+                
+                // Find the shopping project
+                const shoppingProject = projects.find(p => 
+                    p.name.toLowerCase() === settings.shopping.todoistProject.toLowerCase());
+                
+                if (!shoppingProject) {
+                    titleElement.textContent = `${settings.shopping.todoistProject} (not found)`;
+                    return;
+                }
+                
+                // Get tasks for the shopping project
+                const tasksResponse = await fetch(`https://api.todoist.com/rest/v2/tasks?project_id=${shoppingProject.id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${settings.shopping.todoistToken}`
+                    }
+                });
+                
+                if (!tasksResponse.ok) {
+                    throw new Error('Failed to fetch Todoist tasks');
+                }
+                
+                const tasks = await tasksResponse.json();
+                
+                // Update title
+                titleElement.textContent = shoppingProject.name;
+                
+                // Add tasks to the container
+                if (tasks.length === 0) {
+                    const emptyItem = document.createElement('div');
+                    emptyItem.className = 'shopping-item';
+                    emptyItem.textContent = 'No items';
+                    container.appendChild(emptyItem);
+                } else {
+                    tasks.forEach(task => {
+                        const itemElement = document.createElement('div');
+                        itemElement.className = 'shopping-item';
+                        
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.className = 'shopping-checkbox';
+                        checkbox.disabled = true; // Read-only view
+                        
+                        const textElement = document.createElement('span');
+                        textElement.className = 'shopping-text';
+                        textElement.textContent = task.content;
+                        
+                        itemElement.appendChild(checkbox);
+                        itemElement.appendChild(textElement);
+                        
+                        container.appendChild(itemElement);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading Todoist shopping list:', error);
+                titleElement.textContent = 'Shopping (Error)';
+            }
+        }
+
+        async function loadGoogleTasksList(container, titleElement) {
+            if (!gapi || !googleAuthToken) {
+                titleElement.textContent = 'Shopping (Auth Required)';
+                return;
+            }
+            
+            try {
+                // Initialize Tasks API
+                await gapi.client.load('tasks', 'v1');
+                
+                // Get all task lists
+                const listsResponse = await gapi.client.tasks.tasklists.list();
+                const lists = listsResponse.result.items || [];
+                
+                // Find the shopping list
+                const shoppingList = lists.find(list => 
+                    list.title.toLowerCase() === settings.shopping.gTasksList.toLowerCase());
+                
+                if (!shoppingList) {
+                    titleElement.textContent = `${settings.shopping.gTasksList} (not found)`;
+                    return;
+                }
+                
+                // Get tasks for the shopping list
+                const tasksResponse = await gapi.client.tasks.tasks.list({
+                    tasklist: shoppingList.id,
+                    showCompleted: false
+                });
+                
+                const tasks = tasksResponse.result.items || [];
+                
+                // Update title
+                titleElement.textContent = shoppingList.title;
+                
+                // Add tasks to the container
+                if (tasks.length === 0) {
+                    const emptyItem = document.createElement('div');
+                    emptyItem.className = 'shopping-item';
+                    emptyItem.textContent = 'No items';
+                    container.appendChild(emptyItem);
+                } else {
+                    tasks.forEach(task => {
+                        if (!task.title) return; // Skip empty tasks
+                        
+                        const itemElement = document.createElement('div');
+                        itemElement.className = 'shopping-item';
+                        
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.className = 'shopping-checkbox';
+                        checkbox.disabled = true; // Read-only view
+                        
+                        const textElement = document.createElement('span');
+                        textElement.className = 'shopping-text';
+                        textElement.textContent = task.title;
+                        
+                        itemElement.appendChild(checkbox);
+                        itemElement.appendChild(textElement);
+                        
+                        container.appendChild(itemElement);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading Google Tasks shopping list:', error);
+                titleElement.textContent = 'Shopping (Error)';
+            }
+        }
+
+        // Clock functions
+        function updateClock() {
+            const now = new Date();
+            
+            // Update time
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const seconds = now.getSeconds();
+            
+            const timeDisplay = document.querySelector('.time-display');
+            timeDisplay.innerHTML = `${hours}:${minutes.toString().padStart(2, '0')}<sup>${seconds.toString().padStart(2, '0')}</sup>`;
+            
+            // Update date
+            const options = { weekday: 'long', month: 'short', day: 'numeric' };
+            const dateString = now.toLocaleDateString('en-US', options);
+            
+            document.querySelector('.date-display').textContent = dateString;
+            
+            // Update day number and label
+            document.querySelector('.big-day').textContent = now.getDate();
+            
+            // Check dark mode time
+            checkDarkMode();
+        }
+
+        function checkDarkMode() {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const currentMinutes = hours * 60 + minutes;
+            
+            // Parse dark mode start/end times
+            const [startHours, startMinutes] = settings.display.darkModeStart.split(':').map(Number);
+            const [endHours, endMinutes] = settings.display.darkModeEnd.split(':').map(Number);
+            
+            const darkModeStartMinutes = startHours * 60 + startMinutes;
+            const darkModeEndMinutes = endHours * 60 + endMinutes;
+            
+            // Check if we're in the dark mode period
+            let shouldBeDark = false;
+            
+            if (darkModeStartMinutes <= darkModeEndMinutes) {
+                // Simple case: dark mode within the same day
+                shouldBeDark = currentMinutes >= darkModeStartMinutes && currentMinutes < darkModeEndMinutes;
+            } else {
+                // Complex case: dark mode spans midnight
+                shouldBeDark = currentMinutes >= darkModeStartMinutes || currentMinutes < darkModeEndMinutes;
+            }
+            
+            // Apply dark mode class if needed
+            if (shouldBeDark) {
+                document.body.classList.add('dark-mode');
+            } else {
+                document.body.classList.remove('dark-mode');
+            }
+        }
+
+        // Location functions
+        async function detectLocation() {
+            if (settings.location.useBrowser && navigator.geolocation) {
+                try {
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject);
+                    });
+                    
+                    settings.location.lat = position.coords.latitude;
+                    settings.location.lon = position.coords.longitude;
+                    
+                    // Save detected location
+                    localStorage.setItem('dashboardSettings', JSON.stringify(settings));
+                    
+                    // No need to update the city name, we'll use coordinates directly
+                    return true;
+                } catch (error) {
+                    console.warn('Geolocation error:', error);
+                    // Fall back to manual location
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        // Dashboard initialization
+        async function initializeDashboard() {
+            try {
+                // Show loading overlay
+                document.getElementById('loading-overlay').style.display = 'flex';
+                
+                // Update clock immediately and set up interval
+                updateClock();
+                setInterval(updateClock, 1000);
+                
+                // Try to detect location if setting is enabled
+                await detectLocation();
+                
+                // Initialize Google Calendar if credentials are set
+                if (settings.calendar.clientId && settings.calendar.apiKey) {
+                    await initializeGoogleCalendar();
+                }
+                
+                // Get and display weather data
+                const weatherData = await getWeatherData();
+                if (weatherData) {
+                    updateWeatherDisplay(weatherData);
+                    
+                    // Set up interval for weather updates
+                    setInterval(async () => {
+                        const newWeatherData = await getWeatherData();
+                        if (newWeatherData) {
+                            updateWeatherDisplay(newWeatherData);
+                        }
+                    }, settings.weather.refreshInterval * 60 * 1000);
+                }
+                
+                // Load shopping list if settings are configured
+                if (settings.shopping.service === 'todoist' && settings.shopping.todoistToken) {
+                    await loadShoppingList();
+                    
+                    // Set up interval for shopping list updates
+                    setInterval(loadShoppingList, settings.shopping.refreshInterval * 60 * 1000);
+                } else if (settings.shopping.service === 'google' && googleAuthToken) {
+                    await loadShoppingList();
+                    
+                    // Set up interval for shopping list updates
+                    setInterval(loadShoppingList, settings.shopping.refreshInterval * 60 * 1000);
+                }
+                
+                // Set up interval for calendar updates
+                if (googleAuthToken) {
+                    setInterval(loadCalendarEvents, settings.calendar.refreshInterval * 60 * 1000);
+                }
+                
+                // Apply widgets visibility
+                document.querySelector('.weather-now').style.display = 
+                    settings.widgets.weather ? 'block' : 'none';
+                
+                document.querySelector('.forecast-days').style.display = 
+                    settings.widgets.calendar ? 'flex' : 'none';
+                
+                document.querySelector('.shopping-list').style.display = 
+                    settings.widgets.shopping ? 'block' : 'none';
+                
+                document.querySelector('.hourly-forecast').style.display = 
+                    settings.widgets.hourly ? 'flex' : 'none';
+                
+                // Hide loading overlay
+                document.getElementById('loading-overlay').style.display = 'none';
+            } catch (error) {
+                console.error('Error initializing dashboard:', error);
+                document.getElementById('loading-overlay').style.display = 'none';
+                alert('There was an error initializing the dashboard. Please check the settings and try again.');
+            }
+        }
+
+        // Event listeners for settings panel
+        document.querySelector('.settings-icon').addEventListener('click', () => {
+            document.querySelector('.settings-panel').classList.add('open');
+        });
+
+        document.querySelector('.close-settings').addEventListener('click', () => {
+            document.querySelector('.settings-panel').classList.remove('open');
+        });
+
+        document.getElementById('use-browser-location').addEventListener('change', (e) => {
+            document.getElementById('manual-location-input').style.display = 
+                e.target.checked ? 'none' : 'block';
+        });
+
+        document.getElementById('shopping-service').addEventListener('change', (e) => {
+            document.getElementById('todoist-settings').style.display = 
+                e.target.value === 'todoist' ? 'block' : 'none';
+            document.getElementById('google-tasks-settings').style.display = 
+                e.target.value === 'google' ? 'block' : 'none';
+        });
+
+        document.getElementById('save-settings').addEventListener('click', saveSettings);
+        document.getElementById('reset-settings').addEventListener('click', resetSettings);
+
+        document.getElementById('authorize-gcal').addEventListener('click', () => {
+            gapi.auth2.getAuthInstance().signIn();
+        });
+
+        document.getElementById('signout-gcal').addEventListener('click', () => {
+            gapi.auth2.getAuthInstance().signOut();
+        });
+
+        // Initialize dashboard on page load
+        window.addEventListener('load', () => {
+            loadSettings();
+            initializeDashboard();
+        });
+    </script>
+</body>
+</html>
