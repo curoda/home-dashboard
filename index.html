@@ -79,12 +79,10 @@
             }
         }<!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+<head>    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home Dashboard</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">    <style>
         :root {
             --day-bg-color: #f0e68c;
             --night-bg-color: #121212;
@@ -1761,13 +1759,17 @@
                 await initializeCalendarInterface();
                 
                 // Set up calendar refresh interval
-                setInterval(async () => {
-                    if (settings.calendar.method === 'ics') {
+                if (settings.calendar.method === 'ics') {
+                    await loadIcsCalendarEvents();
+                    setInterval(async () => {
                         await loadIcsCalendarEvents();
-                    } else if (settings.calendar.method === 'google' && googleAuthToken) {
+                    }, settings.calendar.refreshInterval * 60 * 1000);
+                } else if (settings.calendar.method === 'google' && googleAuthToken) {
+                    await loadCalendarEvents();
+                    setInterval(async () => {
                         await loadCalendarEvents();
-                    }
-                }, settings.calendar.refreshInterval * 60 * 1000);
+                    }, settings.calendar.refreshInterval * 60 * 1000);
+                }
                 
                 // Get and display weather data
                 const weatherData = await getWeatherData();
@@ -1885,7 +1887,7 @@
         });
 
         // Initialize dashboard on page load
-        window.addEventListener('load', () => {
+        window.addEventListener('DOMContentLoaded', () => {
             loadSettings();
             initializeDashboard();
         });none' : 'block';
