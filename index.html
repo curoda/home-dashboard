@@ -703,7 +703,7 @@
         </div>
     </div>
 
-    <script src="https://accounts.google.com/gsi/client"></script>
+    <script src="https://apis.google.com/js/api.js"></script>
     <script>
         // Settings management
         let settings = {
@@ -1048,10 +1048,30 @@
             }
             
             try {
-                // Load the Google API client library
-                gapi = window.gapi;
-                await new Promise(resolve => gapi.load('client:auth2', resolve));
+                // Make sure gapi is loaded
+                if (!window.gapi) {
+                    console.error('Google API client library not loaded');
+                    return;
+                }
                 
+                gapi = window.gapi;
+                
+                // Load the client and auth2 libraries with proper error handling
+                try {
+                    await new Promise((resolve, reject) => {
+                        gapi.load('client:auth2', {
+                            callback: resolve,
+                            onerror: reject,
+                            timeout: 10000, // 10 seconds timeout
+                            ontimeout: () => reject(new Error('Timeout loading Google API client'))
+                        });
+                    });
+                } catch (loadError) {
+                    console.error('Error loading Google API client:', loadError);
+                    return;
+                }
+                
+                // Initialize the client
                 await gapi.client.init({
                     apiKey: settings.calendar.apiKey,
                     clientId: settings.calendar.clientId,
@@ -1059,9 +1079,21 @@
                     scope: 'https://www.googleapis.com/auth/calendar.readonly'
                 });
                 
+                // Verify auth2 is initialized
+                if (!gapi.auth2) {
+                    console.error('Google auth2 library not initialized properly');
+                    return;
+                }
+                
+                const authInstance = gapi.auth2.getAuthInstance();
+                if (!authInstance) {
+                    console.error('Google auth instance not created');
+                    return;
+                }
+                
                 // Check if user is already signed in
-                if (gapi.auth2.getAuthInstance().isSignedIn.get()) {
-                    googleAuthToken = gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token;
+                if (authInstance.isSignedIn.get()) {
+                    googleAuthToken = authInstance.currentUser.get().getAuthResponse().access_token;
                     document.getElementById('authorize-gcal').style.display = 'none';
                     document.getElementById('signout-gcal').style.display = 'inline-block';
                     await loadCalendarList();
@@ -1072,9 +1104,9 @@
                 }
                 
                 // Set up auth change listener
-                gapi.auth2.getAuthInstance().isSignedIn.listen(async (isSignedIn) => {
+                authInstance.isSignedIn.listen(async (isSignedIn) => {
                     if (isSignedIn) {
-                        googleAuthToken = gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token;
+                        googleAuthToken = authInstance.currentUser.get().getAuthResponse().access_token;
                         document.getElementById('authorize-gcal').style.display = 'none';
                         document.getElementById('signout-gcal').style.display = 'inline-block';
                         await loadCalendarList();
@@ -1670,7 +1702,39 @@
         document.getElementById('reset-settings').addEventListener('click', resetSettings);
 
         document.getElementById('authorize-gcal').addEventListener('click', () => {
-            gapi.auth2.getAuthInstance().signIn();
+            console.log("Auth button clicked");
+            try {
+                if (!gapi) {
+                    console.error("Google API (gapi) is not loaded");
+                    alert("Google API is not loaded. Please check your internet connection and reload the page.");
+                    return;
+                }
+                
+                if (!gapi.auth2) {
+                    console.error("Google Auth2 library is not loaded");
+                    alert("Google Auth library is not initialized. Please check your API key and Client ID settings.");
+                    return;
+                }
+                
+                const authInstance = gapi.auth2.getAuthInstance();
+                if (!authInstance) {
+                    console.error("Auth instance not created");
+                    alert("Google Auth instance couldn't be created. Please check your credentials.");
+                    return;
+                }
+                
+                console.log("Attempting to sign in...");
+                authInstance.signIn().then(
+                    () => console.log("Sign in successful"),
+                    (error) => {
+                        console.error("Sign in failed:", error);
+                        alert("Sign in failed: " + (error.message || "Unknown error"));
+                    }
+                );
+            } catch (e) {
+                console.error("Exception during auth:", e);
+                alert("An error occurred: " + e.message);
+            }
         });
 
         document.getElementById('signout-gcal').addEventListener('click', () => {
