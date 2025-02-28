@@ -1,4 +1,83 @@
-<!DOCTYPE html>
+// Load settings from localStorage if available
+        function loadSettings() {
+            const savedSettings = localStorage.getItem('dashboardSettings');
+            if (savedSettings) {
+                settings = JSON.parse(savedSettings);
+                
+                // Apply settings to form fields
+                document.getElementById('use-browser-location').checked = settings.location.useBrowser;
+                document.getElementById('location-city').value = settings.location.city;
+                document.getElementById('location-state').value = settings.location.state;
+                document.getElementById('location-zip').value = settings.location.zip;
+                document.getElementById('location-country').value = settings.location.country;
+                
+                document.getElementById('weather-api-key').value = settings.weather.apiKey;
+                document.getElementById('weather-units').value = settings.weather.units;
+                document.getElementById('weather-refresh').value = settings.weather.refreshInterval;
+                
+                // Calendar method selection
+                if (settings.calendar.method) {
+                    document.getElementById('calendar-method').value = settings.calendar.method;
+                }
+                
+                // Toggle calendar settings based on method
+                if (settings.calendar.method === 'ics') {
+                    document.getElementById('ics-calendar-settings').style.display = 'block';
+                    document.getElementById('google-calendar-settings').style.display = 'none';
+                } else {
+                    document.getElementById('ics-calendar-settings').style.display = 'none';
+                    document.getElementById('google-calendar-settings').style.display = 'block';
+                }
+                
+                // Load ICS calendars
+                if (settings.calendar.icsCalendars && settings.calendar.icsCalendars.length > 0) {
+                    // Clear existing calendar inputs
+                    document.getElementById('ics-calendar-list').innerHTML = '';
+                    
+                    // Add saved calendars
+                    settings.calendar.icsCalendars.forEach(cal => {
+                        addIcsCalendarInput(cal.name, cal.url, cal.color, cal.enabled);
+                    });
+                } else if (settings.calendar.method === 'ics') {
+                    // Add an empty calendar input if none exist
+                    addIcsCalendarInput();
+                }
+                
+                document.getElementById('gcal-client-id').value = settings.calendar.clientId;
+                document.getElementById('gcal-api-key').value = settings.calendar.apiKey;
+                document.getElementById('calendar-refresh').value = settings.calendar.refreshInterval;
+                
+                document.getElementById('shopping-service').value = settings.shopping.service;
+                document.getElementById('todoist-api-token').value = settings.shopping.todoistToken;
+                document.getElementById('todoist-project').value = settings.shopping.todoistProject;
+                document.getElementById('gtasks-list').value = settings.shopping.gTasksList;
+                document.getElementById('shopping-refresh').value = settings.shopping.refreshInterval;
+                
+                document.getElementById('dark-mode-start').value = settings.display.darkModeStart;
+                document.getElementById('dark-mode-end').value = settings.display.darkModeEnd;
+                document.getElementById('kiosk-mode').checked = settings.display.kioskMode;
+                
+                document.getElementById('widget-weather').checked = settings.widgets.weather;
+                document.getElementById('widget-calendar').checked = settings.widgets.calendar;
+                document.getElementById('widget-shopping').checked = settings.widgets.shopping;
+                document.getElementById('widget-hourly').checked = settings.widgets.hourly;
+                
+                // Toggle manual location inputs
+                document.getElementById('manual-location-input').style.display = 
+                    settings.location.useBrowser ? 'none' : 'block';
+                
+                // Toggle shopping service settings
+                document.getElementById('todoist-settings').style.display = 
+                    settings.shopping.service === 'todoist' ? 'block' : 'none';
+                document.getElementById('google-tasks-settings').style.display = 
+                    settings.shopping.service === 'google' ? 'block' : 'none';
+                
+                // Apply kiosk mode if enabled
+                if (settings.display.kioskMode) {
+                    document.body.classList.add('kiosk-mode');
+                }
+            }
+        }<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -445,23 +524,43 @@
         <div class="settings-section">
             <div class="settings-section-title">Calendar</div>
             <div class="settings-option">
-                <label class="settings-label">Google Calendar Client ID:</label>
-                <input type="text" id="gcal-client-id" class="settings-input" placeholder="Enter your Client ID">
+                <label class="settings-label">Calendar Integration Method:</label>
+                <select id="calendar-method" class="settings-select">
+                    <option value="ics">ICS/Public URL (Recommended)</option>
+                    <option value="google">Google Calendar OAuth</option>
+                </select>
             </div>
-            <div class="settings-option">
-                <label class="settings-label">Google Calendar API Key:</label>
-                <input type="text" id="gcal-api-key" class="settings-input" placeholder="Enter your API key">
-            </div>
-            <div class="settings-option">
-                <button id="authorize-gcal" class="settings-button">Authorize Google Calendar</button>
-                <button id="signout-gcal" class="settings-button" style="background-color: #d32f2f; display: none;">Sign Out</button>
-            </div>
-            <div class="settings-option">
-                <label class="settings-label">Calendars to display:</label>
-                <div id="calendar-list" class="calendar-list">
-                    <!-- Calendar list will be dynamically populated -->
+            
+            <div id="ics-calendar-settings">
+                <div class="settings-option">
+                    <button id="add-calendar" class="settings-button">Add Calendar</button>
+                </div>
+                <div id="ics-calendar-list" class="calendar-list">
+                    <!-- ICS calendars will be added here dynamically -->
                 </div>
             </div>
+            
+            <div id="google-calendar-settings" style="display: none;">
+                <div class="settings-option">
+                    <label class="settings-label">Google Calendar Client ID:</label>
+                    <input type="text" id="gcal-client-id" class="settings-input" placeholder="Enter your Client ID">
+                </div>
+                <div class="settings-option">
+                    <label class="settings-label">Google Calendar API Key:</label>
+                    <input type="text" id="gcal-api-key" class="settings-input" placeholder="Enter your API key">
+                </div>
+                <div class="settings-option">
+                    <button id="authorize-gcal" class="settings-button">Authorize Google Calendar</button>
+                    <button id="signout-gcal" class="settings-button" style="background-color: #d32f2f; display: none;">Sign Out</button>
+                </div>
+                <div class="settings-option">
+                    <label class="settings-label">Calendars to display:</label>
+                    <div id="calendar-list" class="calendar-list">
+                        <!-- Calendar list will be dynamically populated -->
+                    </div>
+                </div>
+            </div>
+            
             <div class="settings-option">
                 <label class="settings-label">Refresh interval (minutes):</label>
                 <input type="number" id="calendar-refresh" class="settings-input" min="1" max="60" value="5">
@@ -722,9 +821,11 @@
                 refreshInterval: 15
             },
             calendar: {
+                method: "ics", // 'ics' or 'google'
                 clientId: "",
                 apiKey: "",
                 calendars: [],
+                icsCalendars: [], // Array of {name, url, color, enabled}
                 refreshInterval: 5
             },
             shopping: {
@@ -812,6 +913,14 @@
             settings.weather.apiKey = document.getElementById('weather-api-key').value;
             settings.weather.units = document.getElementById('weather-units').value;
             settings.weather.refreshInterval = parseInt(document.getElementById('weather-refresh').value);
+            
+            // Calendar method
+            settings.calendar.method = document.getElementById('calendar-method').value;
+            
+            // ICS calendars
+            if (settings.calendar.method === 'ics') {
+                settings.calendar.icsCalendars = collectIcsCalendarData();
+            }
             
             settings.calendar.clientId = document.getElementById('gcal-client-id').value;
             settings.calendar.apiKey = document.getElementById('gcal-api-key').value;
@@ -1040,6 +1149,36 @@
         // Calendar functions
         let gapi = null;
         let googleAuthToken = null;
+
+        async function initializeCalendarInterface() {
+            // Set up event listeners for calendar method selection
+            document.getElementById('calendar-method').addEventListener('change', (e) => {
+                if (e.target.value === 'ics') {
+                    document.getElementById('ics-calendar-settings').style.display = 'block';
+                    document.getElementById('google-calendar-settings').style.display = 'none';
+                    
+                    // Add an empty calendar input if none exist
+                    if (document.getElementById('ics-calendar-list').children.length === 0) {
+                        addIcsCalendarInput();
+                    }
+                } else {
+                    document.getElementById('ics-calendar-settings').style.display = 'none';
+                    document.getElementById('google-calendar-settings').style.display = 'block';
+                }
+            });
+            
+            // Set up event listener for adding new calendars
+            document.getElementById('add-calendar').addEventListener('click', () => {
+                addIcsCalendarInput();
+            });
+            
+            // Initialize based on current settings
+            if (settings.calendar.method === 'ics') {
+                await loadIcsCalendarEvents();
+            } else if (settings.calendar.method === 'google') {
+                await initializeGoogleCalendar();
+            }
+        }
 
         async function initializeGoogleCalendar() {
             if (!settings.calendar.clientId || !settings.calendar.apiKey) {
@@ -1618,10 +1757,17 @@
                 // Try to detect location if setting is enabled
                 await detectLocation();
                 
-                // Initialize Google Calendar if credentials are set
-                if (settings.calendar.clientId && settings.calendar.apiKey) {
-                    await initializeGoogleCalendar();
-                }
+                // Initialize calendar interface
+                await initializeCalendarInterface();
+                
+                // Set up calendar refresh interval
+                setInterval(async () => {
+                    if (settings.calendar.method === 'ics') {
+                        await loadIcsCalendarEvents();
+                    } else if (settings.calendar.method === 'google' && googleAuthToken) {
+                        await loadCalendarEvents();
+                    }
+                }, settings.calendar.refreshInterval * 60 * 1000);
                 
                 // Get and display weather data
                 const weatherData = await getWeatherData();
@@ -1648,11 +1794,6 @@
                     
                     // Set up interval for shopping list updates
                     setInterval(loadShoppingList, settings.shopping.refreshInterval * 60 * 1000);
-                }
-                
-                // Set up interval for calendar updates
-                if (googleAuthToken) {
-                    setInterval(loadCalendarEvents, settings.calendar.refreshInterval * 60 * 1000);
                 }
                 
                 // Apply widgets visibility
@@ -1689,6 +1830,65 @@
         document.getElementById('use-browser-location').addEventListener('change', (e) => {
             document.getElementById('manual-location-input').style.display = 
                 e.target.checked ? 'none' : 'block';
+        });
+
+        document.getElementById('shopping-service').addEventListener('change', (e) => {
+            document.getElementById('todoist-settings').style.display = 
+                e.target.value === 'todoist' ? 'block' : 'none';
+            document.getElementById('google-tasks-settings').style.display = 
+                e.target.value === 'google' ? 'block' : 'none';
+        });
+
+        document.getElementById('save-settings').addEventListener('click', saveSettings);
+        document.getElementById('reset-settings').addEventListener('click', resetSettings);
+
+        document.getElementById('authorize-gcal').addEventListener('click', () => {
+            console.log("Auth button clicked");
+            try {
+                if (!gapi) {
+                    console.error("Google API (gapi) is not loaded");
+                    alert("Google API is not loaded. Please check your internet connection and reload the page.");
+                    return;
+                }
+                
+                if (!gapi.auth2) {
+                    console.error("Google Auth2 library is not loaded");
+                    alert("Google Auth library is not initialized. Please check your API key and Client ID settings.");
+                    return;
+                }
+                
+                const authInstance = gapi.auth2.getAuthInstance();
+                if (!authInstance) {
+                    console.error("Auth instance not created");
+                    alert("Google Auth instance couldn't be created. Please check your credentials.");
+                    return;
+                }
+                
+                console.log("Attempting to sign in...");
+                authInstance.signIn().then(
+                    () => console.log("Sign in successful"),
+                    (error) => {
+                        console.error("Sign in failed:", error);
+                        alert("Sign in failed: " + (error.message || "Unknown error"));
+                    }
+                );
+            } catch (e) {
+                console.error("Exception during auth:", e);
+                alert("An error occurred: " + e.message);
+            }
+        });
+
+        document.getElementById('signout-gcal').addEventListener('click', () => {
+            if (gapi && gapi.auth2 && gapi.auth2.getAuthInstance()) {
+                gapi.auth2.getAuthInstance().signOut();
+            }
+        });
+
+        // Initialize dashboard on page load
+        window.addEventListener('load', () => {
+            loadSettings();
+            initializeDashboard();
+        });none' : 'block';
         });
 
         document.getElementById('shopping-service').addEventListener('change', (e) => {
