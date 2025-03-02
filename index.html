@@ -800,7 +800,7 @@
         <div class="hour-forecast">
             <div class="hour-label">9am</div>
             <div class="hour-icon"><i class="fas fa-sun"></i></div>
-            <div class="hour-precipitation">0%</div>
+            <div class="hour-precipitation">0%</</div>
             <div class="hour-temp">45°</div>
         </div>
         <div class="hour-forecast">
@@ -848,6 +848,8 @@
     </div>
 
     <script>
+/* ------------------- Existing Code -------------------- */
+
 // Settings management
 let settings = {
     location: {
@@ -1120,7 +1122,6 @@ async function parseIcsCalendar(url) {
         const events = [];
         
         // Simple regex-based ICS parser
-        // Find all events (VEVENT blocks)
         const eventRegex = /BEGIN:VEVENT([\s\S]*?)END:VEVENT/g;
         let match;
         
@@ -1380,3 +1381,55 @@ async function loadCalendarEvents() {
         console.error('Error loading calendar events:', error);
     }
 }
+
+/* ------------------- NEW: Initialization + Hide Spinner -------------------- */
+
+// This function re-runs your data loading logic
+async function initializeDashboard() {
+    // Load settings from localStorage (applies them to the page)
+    loadSettings();
+
+    // Load calendar events (async)
+    await loadCalendarEvents();
+
+    // You could also load weather or any other data here if needed
+}
+
+// On page load, run the initialization, then hide the spinner
+document.addEventListener('DOMContentLoaded', async () => {
+    await initializeDashboard();
+    // Hide the loading overlay
+    document.getElementById('loading-overlay').style.display = 'none';
+});
+
+/* ------------------- END -------------------- */
+
+// Add event listeners for settings panel toggles
+document.querySelector('.settings-icon').addEventListener('click', () => {
+    document.querySelector('.settings-panel').classList.add('open');
+});
+
+document.querySelector('.close-settings').addEventListener('click', () => {
+    document.querySelector('.settings-panel').classList.remove('open');
+});
+
+document.getElementById('add-calendar').addEventListener('click', () => {
+    addCalendarInput();
+});
+
+document.getElementById('save-settings').addEventListener('click', saveSettings);
+document.getElementById('reset-settings').addEventListener('click', resetSettings);
+
+// Toggle manual location input based on checkbox
+document.getElementById('use-browser-location').addEventListener('change', function() {
+    document.getElementById('manual-location-input').style.display = this.checked ? 'none' : 'block';
+});
+
+// Toggle shopping service settings
+document.getElementById('shopping-service').addEventListener('change', function() {
+    document.getElementById('todoist-settings').style.display = (this.value === 'todoist') ? 'block' : 'none';
+    document.getElementById('google-tasks-settings').style.display = (this.value === 'google') ? 'block' : 'none';
+});
+    </script>
+</body>
+</html>
