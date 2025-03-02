@@ -1100,8 +1100,14 @@ function collectCalendarData() {
 // Function to parse ICS data
 async function parseIcsCalendar(url) {
     try {
+        if (!url || url.trim() === '') {
+            console.warn('Empty URL provided to parseIcsCalendar');
+            return [];
+        }
+        
+        console.log(`Fetching calendar from URL: ${url}`);
         // Use a CORS proxy if needed
-        const corsProxy = 'https://api.allorigins.win/raw?url='; // Alternative proxy
+        const corsProxy = 'https://corsproxy.io/?'; // Alternative proxy
         const response = await fetch(corsProxy + encodeURIComponent(url));
         
         if (!response.ok) {
@@ -1109,6 +1115,8 @@ async function parseIcsCalendar(url) {
         }
         
         const icsData = await response.text();
+        console.log(`Received ICS data of length: ${icsData.length}`);
+        
         const events = [];
         
         // Simple regex-based ICS parser
@@ -1159,6 +1167,7 @@ async function parseIcsCalendar(url) {
             }
         }
         
+        console.log(`Parsed ${events.length} events from calendar`);
         return events;
     } catch (error) {
         console.error('Error parsing ICS calendar:', error);
