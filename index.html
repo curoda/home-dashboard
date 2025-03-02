@@ -1204,490 +1204,170 @@ function parseIcsDate(icsDate) {
     };
 }
 
-// Load calendar events from all enabled calendars
-// Weather functions
-async function getWeatherData() {
-    if (!settings.weather.apiKey) {
-        console.error('Weather API key not set');
-        document.querySelector('.weather-now').innerHTML = '<div>Please set weather API key</div>';
-        return null;
-    }
-    
+// Load calendar events
+async function loadCalendarEvents() {
     try {
-        // Get coordinates
-        let lat, lon;
-        if (settings.location.lat && settings.location.lon) {
-            lat = settings.location.lat;
-            lon = settings.location.lon;
-        } else {
-            // Geocode from city
-            const geocodeUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${settings.location.city},${settings.location.state},${settings.location.country}&limit=1&appid=${settings.weather.apiKey}`;
-            const geocodeResponse = await fetch(geocodeUrl);
-            const geocodeData = await geocodeResponse.json();
+        const enabledCalendars = settings.calendar.calendars.filter(cal => cal.enabled && cal.url);
+        if (enabledCalendars.length === 0) {
+            console.log("No enabled calendars found");
+            return;
+        }
+        
+        const now = new Date();
+        const allEvents = [];
+        
+        for (const calendar of enabledCalendars) {
+            if (!calendar.url) continue;
             
-            if (geocodeData.length === 0) {
-                throw new Error('Location not found');
+            console.log(`Fetching calendar: ${calendar.name} (${calendar.url})`);
+            try {
+                const events = await parseIcsCalendar(calendar.url);
+                console.log(`Found ${events.length} events for calendar ${calendar.name}`);
+                
+                events.forEach(event => {
+                    // Add calendar info to event
+                    event.calendarName = calendar.name;
+                    event.backgroundColor = calendar.color;
+                    allEvents.push(event);
+                });
+            } catch (calError) {
+                console.error(`Error loading calendar ${calendar.name}:`, calError);
             }
-            
-            lat = geocodeData[0].lat;
-            lon = geocodeData[0].lon;
-            
-            // Save for future use
-            settings.location.lat = lat;
-            settings.location.lon = lon;
-            localStorage.setItem('dashboardSettings', JSON.stringify(settings));
         }
         
-        // Get current weather
-        const currentUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=${settings.weather.units}&appid=${settings.weather.apiKey}`;
-        const currentResponse = await fetch(currentUrl);
-        const currentData = await currentResponse.json();
-        
-        // Get forecast
-        const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=${settings.weather.units}&appid=${settings.weather.apiKey}`;
-        const forecastResponse = await fetch(forecastUrl);
-        const forecastData = await forecastResponse.json();
-        
-        return {
-            current: currentData,
-            forecast: forecastData
-        };
-    } catch (error) {
-        console.error('Error fetching weather data:', error);
-        document.querySelector('.weather-now').innerHTML = '<div>Weather data unavailable</div>';
-        return null;
-    }
-}
-
-function getWeatherIcon(iconCode) {
-    // Map OpenWeatherMap icon codes to Font Awesome icons
-    const iconMap = {
-        '01d': 'fas fa-sun',           // clear sky day
-        '01n': 'fas fa-moon',          // clear sky night
-        '02d': 'fas fa-cloud-sun',     // few clouds day
-        '02n': 'fas fa-cloud-moon',    // few clouds night
-        '03d': 'fas fa-cloud',         // scattered clouds
-        '03n': 'fas fa-cloud',
-        '04d': 'fas fa-cloud',         // broken clouds
-        '04n': 'fas fa-cloud',
-        '09d': 'fas fa-cloud-showers-heavy', // shower rain
-        '09n': 'fas fa-cloud-showers-heavy',
-        '10d': 'fas fa-cloud-sun-rain',     // rain day
-        '10n': 'fas fa-cloud-moon-rain',    // rain night
-        '11d': 'fas fa-bolt',          // thunderstorm
-        '11n': 'fas fa-bolt',
-        '13d': 'fas fa-snowflake',     // snow
-        '13n': 'fas fa-snowflake',
-        '50d': 'fas fa-smog',          // mist
-        '50n': 'fas fa-smog'
-    };
-    
-    return iconMap[iconCode] || 'fas fa-question';
-}
-
-function updateWeatherDisplay(weatherData) {
-    if (!weatherData) return;
-    
-    const current = weatherData.current;
-    const forecast = weatherData.forecast;
-    
-    // Update current weather
-    const temp = Math.round(current.main.temp);
-    const feelsLike = Math.round(current.main.feels_like);
-    const iconClass = getWeatherIcon(current.weather[0].icon);
-    
-    document.querySelector('.temp-display').innerHTML = `${temp}° <i class="${iconClass}"></i>`;
-    document.querySelector('.feels-like').textContent = `Feels like ${feelsLike}`;
-    
-    // Update today's high/low
-    const todayHigh = Math.round(current.main.temp_max);
-    const todayLow = Math.round(current.main.temp_min);
-    const todayIcon = getWeatherIcon(current.weather[0].icon);
-    
-    document.querySelector('.today-weather').innerHTML = 
-        `<i class="${todayIcon}"></i> ${todayLow}° / ${todayHigh}°`;
-    
-    // Group forecast by day
-    const days = {};
-    forecast.list.forEach(item => {
-        const date = new Date(item.dt * 1000);
-        const day = date.toISOString().split('T')[0];
-        
-        if (!days[day]) {
-            days[day] = {
-                temps: [],
-                icons: [],
-                items: []
-            };
-        }
-        
-        days[day].temps.push(item.main.temp);
-        days[day].icons.push(item.weather[0].icon);
-        days[day].items.push(item);
-    });
-    
-    // Update daily forecasts (skip today)
-    const dayKeys = Object.keys(days).sort();
-    const forecastElements = document.querySelectorAll('.day-forecast');
-    
-    for (let i = 0; i < Math.min(dayKeys.length - 1, forecastElements.length); i++) {
-        const dayData = days[dayKeys[i + 1]];
-        const dayElement = forecastElements[i];
-        
-        if (!dayData) continue;
-        
-        // Calculate high temp for the day
-        const high = Math.round(Math.max(...dayData.temps));
-        
-        // Get most common icon for the day
-        const iconCounts = {};
-        dayData.icons.forEach(icon => {
-            iconCounts[icon] = (iconCounts[icon] || 0) + 1;
+        // Sort all events by start time
+        allEvents.sort((a, b) => {
+            const aStart = a.start.dateTime ? new Date(a.start.dateTime) : new Date(a.start.date);
+            const bStart = b.start.dateTime ? new Date(b.start.dateTime) : new Date(b.start.date);
+            return aStart - bStart;
         });
-        let mostCommonIcon = dayData.icons[0];
-        let maxCount = 0;
-        for (const icon in iconCounts) {
-            if (iconCounts[icon] > maxCount) {
-                maxCount = iconCounts[icon];
-                mostCommonIcon = icon;
-            }
+        
+        // Group events by day
+        const eventsByDay = {};
+        
+        for (let i = 0; i < 4; i++) { // Today + 3 days
+            const date = new Date();
+            date.setDate(now.getDate() + i);
+            const dateKey = date.toISOString().split('T')[0];
+            eventsByDay[dateKey] = [];
         }
         
-        const iconClass = getWeatherIcon(mostCommonIcon);
+        allEvents.forEach(event => {
+            const start = event.start.dateTime ? new Date(event.start.dateTime) : new Date(event.start.date);
+            const dateKey = start.toISOString().split('T')[0];
+            
+            if (eventsByDay[dateKey]) {
+                eventsByDay[dateKey].push(event);
+            }
+        });
         
-        // Update day forecast display
-        const dayTemp = dayElement.querySelector('.day-temp');
-        dayTemp.innerHTML = `<i class="${iconClass}"></i> ${high}°`;
-    }
-    
-    // Update hourly forecast
-    const hourlyItems = forecast.list.slice(0, 8); // Next 8 time periods (3 hours each)
-    const hourlyElements = document.querySelectorAll('.hour-forecast');
-
-    hourlyItems.forEach((item, index) => {
-        if (index < hourlyElements.length) {
-            const hourElement = hourlyElements[index];
-            const date = new Date(item.dt * 1000);
-            const hour = date.getHours();
-            const ampm = hour >= 12 ? 'pm' : 'am';
-            const hour12 = hour % 12 || 12;
-            
-            const temp = Math.round(item.main.temp);
-            const iconClass = getWeatherIcon(item.weather[0].icon);
-            const precipitation = item.pop ? Math.round(item.pop * 100) : 0;
-            
-            hourElement.querySelector('.hour-label').textContent = `${hour12}${ampm}`;
-            hourElement.querySelector('.hour-icon').innerHTML = `<i class="${iconClass}"></i>`;
-            hourElement.querySelector('.hour-precipitation').textContent = `${precipitation}%`;
-            hourElement.querySelector('.hour-temp').textContent = `${temp}°`;
-        }
-    });
-}
-
-// Clock functions
-function updateClock() {
-    const now = new Date();
-    
-    // Update time
-    const hours = now.getHours();
-    const minutes = now.getMinutes();
-    const seconds = now.getSeconds();
-    
-    const timeDisplay = document.querySelector('.time-display');
-    timeDisplay.innerHTML = `${hours}:${minutes.toString().padStart(2, '0')}<sup>${seconds.toString().padStart(2, '0')}</sup>`;
-    
-    // Update date
-    const options = { weekday: 'long', month: 'short', day: 'numeric' };
-    const dateString = now.toLocaleDateString('en-US', options);
-    
-    document.querySelector('.date-display').textContent = dateString;
-    
-    // Update day number and label
-    document.querySelector('.big-day').textContent = now.getDate();
-    
-    // Check dark mode time
-    checkDarkMode();
-}
-
-function checkDarkMode() {
-    const now = new Date();
-    const hours = now.getHours();
-    const minutes = now.getMinutes();
-    const currentMinutes = hours * 60 + minutes;
-    
-    // Parse dark mode start/end times
-    const [startHours, startMinutes] = settings.display.darkModeStart.split(':').map(Number);
-    const [endHours, endMinutes] = settings.display.darkModeEnd.split(':').map(Number);
-    
-    const darkModeStartMinutes = startHours * 60 + startMinutes;
-    const darkModeEndMinutes = endHours * 60 + endMinutes;
-    
-    // Check if we're in the dark mode period
-    let shouldBeDark = false;
-    
-    if (darkModeStartMinutes <= darkModeEndMinutes) {
-        // Simple case: dark mode within the same day
-        shouldBeDark = currentMinutes >= darkModeStartMinutes && currentMinutes < darkModeEndMinutes;
-    } else {
-        // Complex case: dark mode spans midnight
-        shouldBeDark = currentMinutes >= darkModeStartMinutes || currentMinutes < darkModeEndMinutes;
-    }
-    
-    // Apply dark mode class if needed
-    if (shouldBeDark) {
-        document.body.classList.add('dark-mode');
-    } else {
-        document.body.classList.remove('dark-mode');
-    }
-}
-
-// Location functions
-async function detectLocation() {
-    if (settings.location.useBrowser && navigator.geolocation) {
-        try {
-            const position = await new Promise((resolve, reject) => {
-                navigator.geolocation.getCurrentPosition(resolve, reject, {
-                    timeout: 10000,
-                    maximumAge: 600000
-                });
-            });
-            
-            settings.location.lat = position.coords.latitude;
-            settings.location.lon = position.coords.longitude;
-            
-            // Save detected location
-            localStorage.setItem('dashboardSettings', JSON.stringify(settings));
-            
-            // No need to update the city name, we'll use coordinates directly
-            return true;
-        } catch (error) {
-            console.warn('Geolocation error:', error);
-            // Fall back to manual location
-            return false;
-        }
-    }
-    return false;
-}
-
-// Shopping List functions
-async function loadShoppingList() {
-    const shoppingListElement = document.querySelector('.shopping-list');
-    const titleElement = shoppingListElement.querySelector('.shopping-title');
-    
-    // Clear existing items
-    const items = shoppingListElement.querySelectorAll('.shopping-item');
-    items.forEach(item => item.remove());
-    
-    if (settings.shopping.service === 'todoist' && settings.shopping.todoistToken) {
-        try {
-            // First get all projects
-            const projectsResponse = await fetch('https://api.todoist.com/rest/v2/projects', {
-                headers: {
-                    'Authorization': `Bearer ${settings.shopping.todoistToken}`
+        // Update today's events
+        const todayKey = now.toISOString().split('T')[0];
+        const todayEvents = eventsByDay[todayKey] || [];
+        const todayEventsElement = document.querySelector('.today-events');
+        
+        if (todayEvents.length === 0) {
+            todayEventsElement.innerHTML = '<div class="event"><span>No events today</span></div>';
+        } else {
+            todayEventsElement.innerHTML = '';
+            todayEvents.forEach(event => {
+                const eventElement = document.createElement('div');
+                eventElement.className = 'event';
+                
+                const timeElement = document.createElement('span');
+                timeElement.className = 'event-time';
+                
+                if (event.start.dateTime) {
+                    const startTime = new Date(event.start.dateTime);
+                    const hours = startTime.getHours();
+                    const minutes = startTime.getMinutes();
+                    const ampm = hours >= 12 ? 'PM' : 'AM';
+                    const hours12 = hours % 12 || 12;
+                    timeElement.textContent = `${hours12}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+                } else {
+                    timeElement.textContent = 'All day';
                 }
+                
+                const titleElement = document.createElement('span');
+                titleElement.className = 'event-title';
+                titleElement.textContent = event.summary;
+                
+                // Apply calendar color
+                titleElement.style.borderLeftColor = event.backgroundColor;
+                
+                eventElement.appendChild(timeElement);
+                eventElement.appendChild(titleElement);
+                
+                todayEventsElement.appendChild(eventElement);
             });
+        }
+        
+        // Update future days events
+        const dateKeys = Object.keys(eventsByDay).sort();
+        const forecastElements = document.querySelectorAll('.day-forecast');
+        
+        for (let i = 0; i < Math.min(dateKeys.length - 1, forecastElements.length); i++) {
+            const dateKey = dateKeys[i + 1]; // Skip today
+            const dayEvents = eventsByDay[dateKey] || [];
+            const dayElement = forecastElements[i];
             
-            if (!projectsResponse.ok) {
-                throw new Error('Failed to fetch Todoist projects');
-            }
+            // Update header date
+            const date = new Date(dateKey);
+            const dayNum = date.getDate().toString().padStart(2, '0');
+            const monthName = date.toLocaleString('default', { month: 'long' });
+            const dayName = date.toLocaleString('default', { weekday: 'long' });
             
-            const projects = await projectsResponse.json();
+            dayElement.querySelector('.day-date').textContent = dayNum;
+            dayElement.querySelector('.day-name').textContent = `${monthName}, ${dayName}`;
             
-            // Find the shopping project
-            const shoppingProject = projects.find(p => 
-                p.name.toLowerCase() === settings.shopping.todoistProject.toLowerCase());
+            // Update events
+            const dayEventsElement = dayElement.querySelector('.day-events');
             
-            if (!shoppingProject) {
-                titleElement.textContent = `${settings.shopping.todoistProject} (not found)`;
-                return;
-            }
-            
-            // Get tasks for the shopping project
-            const tasksResponse = await fetch(`https://api.todoist.com/rest/v2/tasks?project_id=${shoppingProject.id}`, {
-                headers: {
-                    'Authorization': `Bearer ${settings.shopping.todoistToken}`
-                }
-            });
-            
-            if (!tasksResponse.ok) {
-                throw new Error('Failed to fetch Todoist tasks');
-            }
-            
-            const tasks = await tasksResponse.json();
-            
-            // Update title
-            titleElement.textContent = shoppingProject.name;
-            
-            // Add tasks to the container
-            if (tasks.length === 0) {
-                const emptyItem = document.createElement('div');
-                emptyItem.className = 'shopping-item';
-                emptyItem.textContent = 'No items';
-                shoppingListElement.appendChild(emptyItem);
+            if (dayEvents.length === 0) {
+                dayEventsElement.innerHTML = '<div class="day-event"><span>No events</span></div>';
             } else {
-                tasks.forEach(task => {
-                    const itemElement = document.createElement('div');
-                    itemElement.className = 'shopping-item';
+                dayEventsElement.innerHTML = '';
+                dayEvents.slice(0, 3).forEach(event => { // Limit to 3 events per day for space
+                    const eventElement = document.createElement('div');
+                    eventElement.className = 'day-event';
                     
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.className = 'shopping-checkbox';
-                    checkbox.disabled = true; // Read-only view
+                    const timeElement = document.createElement('span');
+                    timeElement.className = 'event-time';
                     
-                    const textElement = document.createElement('span');
-                    textElement.className = 'shopping-text';
-                    textElement.textContent = task.content;
-                    
-                    itemElement.appendChild(checkbox);
-                    itemElement.appendChild(textElement);
-                    
-                    shoppingListElement.appendChild(itemElement);
-                });
-            }
-        } catch (error) {
-            console.error('Error loading Todoist shopping list:', error);
-            titleElement.textContent = 'Shopping (Error)';
-        }
-    } else {
-        // Default shopping list (no service configured)
-        titleElement.textContent = 'Shopping';
-        
-        const emptyItem = document.createElement('div');
-        emptyItem.className = 'shopping-item';
-        emptyItem.textContent = 'Add items in settings';
-        shoppingListElement.appendChild(emptyItem);
-    }
-}
-
-// Dashboard initialization
-async function initializeDashboard() {
-    try {
-        // Show loading overlay
-        document.getElementById('loading-overlay').style.display = 'flex';
-        
-        // Update clock immediately and set up interval
-        updateClock();
-        setInterval(updateClock, 1000);
-        
-        // Try to detect location if setting is enabled
-        if (settings.location.useBrowser) {
-            await detectLocation();
-        }
-        
-        // Load calendar events
-        if (settings.calendar.calendars && settings.calendar.calendars.length > 0) {
-            try {
-                await loadCalendarEvents();
-                
-                // Set up refresh interval
-                setInterval(async () => {
-                    await loadCalendarEvents();
-                }, settings.calendar.refreshInterval * 60 * 1000);
-            } catch (error) {
-                console.error('Error loading calendars:', error);
-            }
-        }
-        
-        // Get and display weather data
-        if (settings.weather.apiKey) {
-            try {
-                const weatherData = await getWeatherData();
-                if (weatherData) {
-                    updateWeatherDisplay(weatherData);
-                    
-                    // Set up interval for weather updates
-                    setInterval(async () => {
-                        try {
-                            const newWeatherData = await getWeatherData();
-                            if (newWeatherData) {
-                                updateWeatherDisplay(newWeatherData);
-                            }
-                        } catch (weatherError) {
-                            console.error('Error updating weather:', weatherError);
-                        }
-                    }, settings.weather.refreshInterval * 60 * 1000);
-                }
-            } catch (weatherError) {
-                console.error('Error loading weather:', weatherError);
-            }
-        }
-        
-        // Load shopping list
-        if (settings.shopping.service === 'todoist' && settings.shopping.todoistToken) {
-            try {
-                await loadShoppingList();
-                
-                // Set up interval for shopping list updates
-                setInterval(async () => {
-                    try {
-                        await loadShoppingList();
-                    } catch (error) {
-                        console.error('Error updating shopping list:', error);
+                    if (event.start.dateTime) {
+                        const startTime = new Date(event.start.dateTime);
+                        const hours = startTime.getHours();
+                        const minutes = startTime.getMinutes();
+                        const ampm = hours >= 12 ? 'PM' : 'AM';
+                        const hours12 = hours % 12 || 12;
+                        timeElement.textContent = `${hours12}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+                    } else {
+                        timeElement.textContent = 'All day';
                     }
-                }, settings.shopping.refreshInterval * 60 * 1000);
-            } catch (shoppingError) {
-                console.error('Error loading shopping list:', shoppingError);
+                    
+                    const titleElement = document.createElement('span');
+                    titleElement.className = 'event-title';
+                    titleElement.textContent = event.summary;
+                    
+                    // Apply calendar color
+                    titleElement.style.borderLeftColor = event.backgroundColor;
+                    
+                    eventElement.appendChild(timeElement);
+                    eventElement.appendChild(titleElement);
+                    
+                    dayEventsElement.appendChild(eventElement);
+                });
+                
+                // Add indicator if there are more events
+                if (dayEvents.length > 3) {
+                    const moreElement = document.createElement('div');
+                    moreElement.className = 'day-event';
+                    moreElement.textContent = `+ ${dayEvents.length - 3} more events`;
+                    dayEventsElement.appendChild(moreElement);
+                }
             }
         }
-        
-        // Apply widgets visibility
-        document.querySelector('.weather-now').style.display = 
-            settings.widgets.weather ? 'block' : 'none';
-        
-        document.querySelector('.forecast-days').style.display = 
-            settings.widgets.calendar ? 'flex' : 'none';
-        
-        document.querySelector('.shopping-list').style.display = 
-            settings.widgets.shopping ? 'block' : 'none';
-        
-        document.querySelector('.hourly-forecast').style.display = 
-            settings.widgets.hourly ? 'flex' : 'none';
-        
-        // Hide loading overlay
-        document.getElementById('loading-overlay').style.display = 'none';
     } catch (error) {
-        console.error('Error initializing dashboard:', error);
-        document.getElementById('loading-overlay').style.display = 'none';
-        alert('There was an error initializing the dashboard. Please check console for details.');
+        console.error('Error loading calendar events:', error);
     }
 }
-
-// Event listeners for settings panel
-document.addEventListener('DOMContentLoaded', () => {
-    // Settings panel toggle
-    document.querySelector('.settings-icon').addEventListener('click', () => {
-        document.querySelector('.settings-panel').classList.add('open');
-    });
-    
-    document.querySelector('.close-settings').addEventListener('click', () => {
-        document.querySelector('.settings-panel').classList.remove('open');
-    });
-    
-    // Location settings
-    document.getElementById('use-browser-location').addEventListener('change', (e) => {
-        document.getElementById('manual-location-input').style.display = 
-            e.target.checked ? 'none' : 'block';
-    });
-    
-    // Shopping service toggle
-    document.getElementById('shopping-service').addEventListener('change', (e) => {
-        document.getElementById('todoist-settings').style.display = 
-            e.target.value === 'todoist' ? 'block' : 'none';
-        document.getElementById('google-tasks-settings').style.display = 
-            e.target.value === 'google' ? 'block' : 'none';
-    });
-    
-    // Add calendar button
-    document.getElementById('add-calendar').addEventListener('click', () => {
-        addCalendarInput();
-    });
-    
-    // Save and reset buttons
-    document.getElementById('save-settings').addEventListener('click', saveSettings);
-    document.getElementById('reset-settings').addEventListener('click', resetSettings);
-    
-    // Load settings and initialize dashboard
-    loadSettings();
-    initializeDashboard();
-});
-</script>
