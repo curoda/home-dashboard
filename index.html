@@ -668,6 +668,12 @@
                 <label class="settings-label">Refresh interval (minutes):</label>
                 <input type="number" id="shopping-refresh" class="settings-input" min="1" max="60" value="5">
             </div>
+            <div class="settings-option">
+                <label class="settings-label">
+                    <input type="checkbox" id="shopping-show-add" class="settings-checkbox" checked>
+                    Show add item control on dashboard
+                </label>
+            </div>
         </div>
         
         <div class="settings-section">
@@ -896,7 +902,8 @@ let settings = {
         todoistToken: "",
         todoistProject: "Shopping",
         gTasksList: "Shopping",
-        refreshInterval: 5
+        refreshInterval: 5,
+        showAddControls: true
     },
     display: {
         darkModeStart: "19:00",
@@ -950,6 +957,7 @@ function loadSettings() {
             document.getElementById('todoist-project').value = settings.shopping.todoistProject || 'Shopping';
             document.getElementById('gtasks-list').value = settings.shopping.gTasksList || 'Shopping';
             document.getElementById('shopping-refresh').value = settings.shopping.refreshInterval || 5;
+            document.getElementById('shopping-show-add').checked = settings.shopping.showAddControls !== false;
             
             document.getElementById('dark-mode-start').value = settings.display.darkModeStart || '19:00';
             document.getElementById('dark-mode-end').value = settings.display.darkModeEnd || '07:00';
@@ -967,8 +975,10 @@ function loadSettings() {
             // Toggle shopping service settings
             document.getElementById('todoist-settings').style.display = 
                 settings.shopping.service === 'todoist' ? 'block' : 'none';
-            document.getElementById('google-tasks-settings').style.display = 
+            document.getElementById('google-tasks-settings').style.display =
                 settings.shopping.service === 'google' ? 'block' : 'none';
+
+            updateAddItemVisibility();
             
             // Apply kiosk mode if enabled
             if (settings.display.kioskMode) {
@@ -1008,6 +1018,7 @@ function saveSettings() {
         settings.shopping.todoistProject = document.getElementById('todoist-project').value;
         settings.shopping.gTasksList = document.getElementById('gtasks-list').value;
         settings.shopping.refreshInterval = parseInt(document.getElementById('shopping-refresh').value) || 5;
+        settings.shopping.showAddControls = document.getElementById('shopping-show-add').checked;
         
         settings.display.darkModeStart = document.getElementById('dark-mode-start').value;
         settings.display.darkModeEnd = document.getElementById('dark-mode-end').value;
@@ -1323,6 +1334,7 @@ function renderShoppingList(items) {
         div.appendChild(del);
         container.appendChild(div);
     });
+    updateAddItemVisibility();
 }
 
 async function addShoppingItem() {
@@ -1345,6 +1357,13 @@ async function addShoppingItem() {
         loadShoppingList();
     } catch (err) {
         console.error('Error adding Todoist task:', err);
+    }
+}
+
+function updateAddItemVisibility() {
+    const container = document.querySelector('.shopping-new-item');
+    if (container) {
+        container.style.display = settings.shopping.showAddControls ? 'flex' : 'none';
     }
 }
 
@@ -1522,6 +1541,7 @@ async function loadCalendarEvents() {
 async function initializeDashboard() {
     // Load settings from localStorage (applies them to the page)
     loadSettings();
+    updateAddItemVisibility();
 
     // Load calendar events (async)
     await loadCalendarEvents();
@@ -1565,6 +1585,7 @@ document.getElementById('shopping-add-btn').addEventListener('click', addShoppin
 document.getElementById('shopping-add-input').addEventListener('keypress', e => {
     if (e.key === 'Enter') addShoppingItem();
 });
+document.getElementById('shopping-show-add').addEventListener('change', updateAddItemVisibility);
 
 // Toggle manual location input based on checkbox
 document.getElementById('use-browser-location').addEventListener('change', function() {
