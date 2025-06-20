@@ -1430,6 +1430,30 @@ document.getElementById('shopping-service').addEventListener('change', function(
     document.getElementById('todoist-settings').style.display = (this.value === 'todoist') ? 'block' : 'none';
     document.getElementById('google-tasks-settings').style.display = (this.value === 'google') ? 'block' : 'none';
 });
+document.addEventListener('DOMContentLoaded', () => {
+  const timeEl = document.querySelector('.time-display');
+  const dateEl = document.querySelector('.date-display');
+
+  function updateClock() {
+    const now = new Date();
+
+    // --- time: hh:mm<sup>ss</sup> in 12-hour format (no AM/PM) ---
+    let h = now.getHours() % 12 || 12;              // convert 0→12
+    let m = now.getMinutes().toString().padStart(2,'0');
+    let s = now.getSeconds().toString().padStart(2,'0');
+    timeEl.innerHTML = `${h}:${m}<sup>${s}</sup>`;
+
+    // --- date: Weekday Mon DD ---
+    dateEl.textContent = now.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month:   'short',
+      day:     'numeric'
+    });
+  }
+
+  updateClock();              // initial write
+  setInterval(updateClock, 1000); // update every second
+});
     </script>
 </body>
 </html>
