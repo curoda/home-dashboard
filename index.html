@@ -1213,8 +1213,9 @@ async function parseIcsCalendar(url) {
             // Check if this is a future event
             const now = new Date();
             const eventEnd = event.end || event.start;
-            
-            if (eventEnd && new Date(eventEnd) >= now) {
+            const endDateStr = eventEnd && (eventEnd.dateTime || eventEnd.date);
+
+            if (endDateStr && new Date(endDateStr) >= now) {
                 events.push(event);
             }
         }
