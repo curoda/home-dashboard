@@ -1011,26 +1011,31 @@ function saveSettings() {
         } else {
             document.body.classList.remove('kiosk-mode');
         }
+    }
+}
         
-        // Reload data
-        initializeDashboard();{
-  // 1) Apply settings to the page (you already have this)
+        
+     async function initializeDashboard() {
+  // 1) Apply settings to the UI
   loadSettings();
 
-  // 2) Load calendar events (you already have this)
+  // 2) Load calendar events (this is async, so we await it)
   await loadCalendarEvents();
 
-  // 3) NOW add the weather hook immediately below:
+  // 3) If weather is enabled, fetch & render it (also async)
   if (settings.widgets.weather) {
-    // fetch once on startup
     await fetchAndDisplayWeather();
-
-    // then auto-refresh every X minutes
     setInterval(fetchAndDisplayWeather,
       settings.weather.refreshInterval * 60 * 1000
     );
   }
 }
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await initializeDashboard();
+  document.getElementById('loading-overlay').style.display = 'none';
+});
+
         
         // Close settings panel
         document.querySelector('.settings-panel').classList.remove('open');
@@ -1608,8 +1613,7 @@ function updateDailyForecast(daily) {
     // (you already handle events elsewhere)
   });
 }
-
-        
+       
     </script>
 </body>
 </html>
