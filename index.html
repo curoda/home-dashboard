@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home Dashboard</title>
+    <link rel="icon" href="sun favicon1.png" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>  
         :root {
@@ -201,6 +202,7 @@
             padding: 5px;
             margin-right: 5px;
         }
+
         .hourly-forecast {
             display: flex;
             justify-content: space-between;
@@ -553,6 +555,11 @@
     </style>
 </head>
 <body>
+    <div class="weather-now">
+  <div class="temp-display"></div>
+  <div class="feels-like"></div>
+</div>
+    <div class="hour-icon"><i class="fas fa-sun"></i></div>
     <div id="loading-overlay">
         <div class="spinner"></div>
     </div>
@@ -904,6 +911,7 @@ let settings = {
         hourly: true
     }
 };
+settings.weather.apiKey = 'a6d496b197bfb7e2e50879582e421cbc';
 
 // Load settings from localStorage if available
 function loadSettings() {
@@ -983,6 +991,7 @@ function loadSettings() {
 }
 
 // Save settings to localStorage
+// Save settings to localStorage
 function saveSettings() {
     try {
         // Collect data from form fields
@@ -994,18 +1003,20 @@ function saveSettings() {
         
         settings.weather.apiKey = document.getElementById('weather-api-key').value;
         settings.weather.units = document.getElementById('weather-units').value;
-        settings.weather.refreshInterval = parseInt(document.getElementById('weather-refresh').value) || 15;
+        settings.weather.refreshInterval = parseInt(document.getElementById('weather-refresh').value, 10) || 15;
         
         // Collect calendar data
         settings.calendar.calendars = collectCalendarData();
-        settings.calendar.refreshInterval = parseInt(document.getElementById('calendar-refresh').value) || 5;
+        settings.calendar.refreshInterval = parseInt(document.getElementById('calendar-refresh').value, 10) || 5;
         
         settings.shopping.service = document.getElementById('shopping-service').value;
         settings.shopping.todoistToken = document.getElementById('todoist-api-token').value;
         settings.shopping.todoistProject = document.getElementById('todoist-project').value;
         settings.shopping.gTasksList = document.getElementById('gtasks-list').value;
+
         settings.shopping.refreshInterval = parseInt(document.getElementById('shopping-refresh').value) || 5;
         settings.shopping.showAddControls = document.getElementById('shopping-show-add').checked;
+
         
         settings.display.darkModeStart = document.getElementById('dark-mode-start').value;
         settings.display.darkModeEnd = document.getElementById('dark-mode-end').value;
@@ -1026,7 +1037,7 @@ function saveSettings() {
             document.body.classList.remove('kiosk-mode');
         }
         
-        // Reload data
+        // Re-initialize dashboard with new settings
         initializeDashboard();
         
         // Close settings panel
@@ -1039,6 +1050,28 @@ function saveSettings() {
         alert('Failed to save settings. Please check the console for details.');
     }
 }
+
+
+  async function initializeDashboard() {
+  // 1) Apply settings to the UI
+  loadSettings();
+
+  // 2) Load calendar events (this is async, so we await it)
+  await loadCalendarEvents();
+
+  // 3) If weather is enabled, fetch & render it (also async)
+  if (settings.widgets.weather) {
+    await fetchAndDisplayWeather();
+    setInterval(fetchAndDisplayWeather,
+      settings.weather.refreshInterval * 60 * 1000
+    );
+  }
+}
+        
+document.addEventListener('DOMContentLoaded', async () => {
+  await initializeDashboard();
+  document.getElementById('loading-overlay').style.display = 'none';
+});
 
 // Reset settings to defaults
 function resetSettings() {
@@ -1290,6 +1323,7 @@ function renderShoppingList(items) {
         const div = document.createElement('div');
         div.className = 'shopping-item';
 
+
         const span = document.createElement('span');
         span.className = 'shopping-text';
         span.textContent = item.content;
@@ -1297,6 +1331,34 @@ function renderShoppingList(items) {
         container.appendChild(div);
     });
     updateAddItemVisibility();
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'shopping-checkbox';
+        checkbox.addEventListener('change', async () => {
+            await fetch(`https://api.todoist.com/rest/v2/tasks/${item.id}/close`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${settings.shopping.todoistToken}` }
+            });
+            loadShoppingList();
+        });
+
+        const del = document.createElement('button');
+        del.className = 'delete-shopping-item';
+        del.textContent = '✕';
+        del.addEventListener('click', async () => {
+            await fetch(`https://api.todoist.com/rest/v2/tasks/${item.id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${settings.shopping.todoistToken}` }
+            });
+            loadShoppingList();
+        });
+
+        div.appendChild(checkbox);
+        div.appendChild(span);
+        div.appendChild(del);
+        container.appendChild(div);
+    });
 }
 
 async function addShoppingItem() {
@@ -1322,13 +1384,13 @@ async function addShoppingItem() {
     }
 }
 
+
 function updateAddItemVisibility() {
     const container = document.querySelector('.shopping-new-item');
     if (container) {
         container.style.display = settings.shopping.showAddControls ? 'flex' : 'none';
     }
 }
-
 // Load calendar events
 async function loadCalendarEvents() {
     try {
@@ -1505,8 +1567,9 @@ async function initializeDashboard() {
     loadSettings();
     updateAddItemVisibility();
 
-    // Load calendar events (async)
-    await loadCalendarEvents();
+
+  // 2) Load calendar events
+  await loadCalendarEvents();
 
     // Load shopping items if using Todoist
     if (settings.shopping.service === 'todoist') {
@@ -1515,6 +1578,15 @@ async function initializeDashboard() {
     }
 
     // You could also load weather or any other data here if needed
+  // 3) Load weather if enabled
+  if (settings.widgets.weather) {
+    await fetchAndDisplayWeather();
+    // schedule automatic refresh
+    setInterval(
+      fetchAndDisplayWeather,
+      settings.weather.refreshInterval * 60 * 1000
+    );
+  }
 }
 
 // On page load, run the initialization, then hide the spinner
@@ -1547,6 +1619,7 @@ document.getElementById('shopping-add-btn').addEventListener('click', addShoppin
 document.getElementById('shopping-add-input').addEventListener('keypress', e => {
     if (e.key === 'Enter') addShoppingItem();
 });
+
 document.getElementById('shopping-show-add').addEventListener('change', updateAddItemVisibility);
 
 // Toggle manual location input based on checkbox
@@ -1583,6 +1656,139 @@ document.addEventListener('DOMContentLoaded', () => {
   updateClock();              // initial write
   setInterval(updateClock, 1000); // update every second
 });
+
+// 1️⃣ GEOCODE if needed
+async function resolveLatLon() {
+  if (settings.location.useBrowser && navigator.geolocation) {
+    return new Promise((res, rej) => {
+      navigator.geolocation.getCurrentPosition(
+        pos => res({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
+        err => rej(err),
+        { enableHighAccuracy: true }
+      );
+    });
+  } else {
+    // simple OWM geocoding: "City,State,Country"
+    const q = [
+      settings.location.city,
+      settings.location.state,
+      settings.location.country
+    ].filter(Boolean).join(',');
+    const geoUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(q)}&limit=1&appid=${settings.weather.apiKey}`;
+    const geoResp = await fetch(geoUrl);
+    const geoData = await geoResp.json();
+    if (!geoData[0]) throw new Error("Geocoding failed");
+    return { lat: geoData[0].lat, lon: geoData[0].lon };
+  }
+}
+
+// 2️⃣ FETCH & PARSE WEATHER
+async function fetchAndDisplayWeather() {
+  try {
+    const { lat, lon } = await resolveLatLon();
+    const oneCallUrl =
+      `https://api.openweathermap.org/data/2.5/onecall` +
+      `?lat=${lat}&lon=${lon}` +
+      `&units=${settings.weather.units}` +
+      `&exclude=minutely,alerts` +
+      `&appid=${settings.weather.apiKey}`;
+
+    const resp = await fetch(oneCallUrl);
+    if (!resp.ok) throw new Error("Weather API error");
+    const data = await resp.json();
+
+    updateCurrentWeather(data.current);
+    updateHourlyForecast(data.hourly);
+    updateDailyForecast(data.daily);
+  } catch (e) {
+    console.error("Weather error:", e);
+  }
+}
+
+// 3️⃣ UPDATE YOUR DOM
+
+function updateCurrentWeather(current) {
+  // e.g. 41° <i class="fas fa-sun"></i>
+  const weatherEl = document.querySelector('.weather-now .temp-display');
+  const feelsEl   = document.querySelector('.feels-like');
+  const iconCode  = current.weather[0].icon; // "01d", "02n", etc.
+
+  // choose a FontAwesome icon mapping or use OWM icon ending
+  const faIcon = {
+    "01d":"fa-sun","01n":"fa-moon",
+    "02d":"fa-cloud-sun","02n":"fa-cloud-moon",
+    "03d":"fa-cloud","03n":"fa-cloud",
+    "04d":"fa-cloud-meatball","04n":"fa-cloud-meatball",
+    "09d":"fa-cloud-showers-heavy","09n":"fa-cloud-showers-heavy",
+    "10d":"fa-cloud-sun-rain","10n":"fa-cloud-moon-rain",
+    "11d":"fa-bolt","11n":"fa-bolt",
+    "13d":"fa-snowflake","13n":"fa-snowflake",
+    "50d":"fa-smog","50n":"fa-smog"
+  }[iconCode] || "fa-question";
+
+  weatherEl.innerHTML = 
+    `${Math.round(current.temp)}° ` +
+    `<i class="fas ${faIcon}"></i>`;
+
+  feelsEl.textContent = `Feels like ${Math.round(current.feels_like)}°`;
+}
+
+function updateHourlyForecast(hourly) {
+  const slots = document.querySelectorAll('.hour-forecast');
+  slots.forEach((slot, i) => {
+    const hr = hourly[i];
+    if (!hr) return;
+
+    let date = new Date(hr.dt * 1000);
+    let hourLabel = date.getHours() % 12 || 12;
+    hourLabel += date.getHours() >= 12 ? "pm":"am";
+    slot.querySelector('.hour-label').textContent = hourLabel;
+
+    // icon
+    const iconCode = hr.weather[0].icon;
+    const faIcon = {
+      "01d":"fa-sun","01n":"fa-moon",
+      "02d":"fa-cloud-sun","02n":"fa-cloud-moon",
+      // etc same map as above…
+    }[iconCode] || "fa-question";
+    slot.querySelector('.hour-icon i')
+        .className = `fas ${faIcon}`;
+
+    slot.querySelector('.hour-precipitation')
+        .textContent = `${Math.round(hr.pop * 100)}%`;
+
+    slot.querySelector('.hour-temp')
+        .textContent = `${Math.round(hr.temp)}°`;
+  });
+}
+
+function updateDailyForecast(daily) {
+  const days = document.querySelectorAll('.day-forecast');
+  days.forEach((dayEl, idx) => {
+    const dayData = daily[idx+1]; // [0] is today, we want tomorrow+
+    if (!dayData) return;
+
+    const dt = new Date(dayData.dt * 1000);
+    const dd = dt.getDate().toString().padStart(2,'0');
+    const mon = dt.toLocaleString('en-US',{month:'long'});
+    const wd = dt.toLocaleString('en-US',{weekday:'long'});
+
+    dayEl.querySelector('.day-date').textContent = dd;
+    dayEl.querySelector('.day-name')
+         .textContent = `${mon}, ${wd}`;
+
+    // icon & high/low
+    const iconCode = dayData.weather[0].icon;
+    const faIcon   = /* same map as above */ "fa-cloud-sun";
+    dayEl.querySelector('.day-temp').innerHTML =
+      `<i class="fas ${faIcon}"></i> ` +
+      `${Math.round(dayData.temp.max)}°`;
+
+    // clear old events if any
+    // (you already handle events elsewhere)
+  });
+}
+       
     </script>
 </body>
 </html>
