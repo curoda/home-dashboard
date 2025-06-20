@@ -970,6 +970,7 @@ function loadSettings() {
 }
 
 // Save settings to localStorage
+// Save settings to localStorage
 function saveSettings() {
     try {
         // Collect data from form fields
@@ -981,17 +982,17 @@ function saveSettings() {
         
         settings.weather.apiKey = document.getElementById('weather-api-key').value;
         settings.weather.units = document.getElementById('weather-units').value;
-        settings.weather.refreshInterval = parseInt(document.getElementById('weather-refresh').value) || 15;
+        settings.weather.refreshInterval = parseInt(document.getElementById('weather-refresh').value, 10) || 15;
         
         // Collect calendar data
         settings.calendar.calendars = collectCalendarData();
-        settings.calendar.refreshInterval = parseInt(document.getElementById('calendar-refresh').value) || 5;
+        settings.calendar.refreshInterval = parseInt(document.getElementById('calendar-refresh').value, 10) || 5;
         
         settings.shopping.service = document.getElementById('shopping-service').value;
         settings.shopping.todoistToken = document.getElementById('todoist-api-token').value;
         settings.shopping.todoistProject = document.getElementById('todoist-project').value;
         settings.shopping.gTasksList = document.getElementById('gtasks-list').value;
-        settings.shopping.refreshInterval = parseInt(document.getElementById('shopping-refresh').value) || 5;
+        settings.shopping.refreshInterval = parseInt(document.getElementById('shopping-refresh').value, 10) || 5;
         
         settings.display.darkModeStart = document.getElementById('dark-mode-start').value;
         settings.display.darkModeEnd = document.getElementById('dark-mode-end').value;
@@ -1011,11 +1012,23 @@ function saveSettings() {
         } else {
             document.body.classList.remove('kiosk-mode');
         }
+        
+        // Re-initialize dashboard with new settings
+        initializeDashboard();
+        
+        // Close settings panel
+        document.querySelector('.settings-panel').classList.remove('open');
+        
+        // Show success message
+        alert('Settings saved successfully!');
+    } catch (error) {
+        console.error('Error saving settings:', error);
+        alert('Failed to save settings. Please check the console for details.');
     }
 }
-        
-        
-     async function initializeDashboard() {
+
+
+  async function initializeDashboard() {
   // 1) Apply settings to the UI
   loadSettings();
 
@@ -1029,23 +1042,6 @@ function saveSettings() {
       settings.weather.refreshInterval * 60 * 1000
     );
   }
-}
-
-document.addEventListener('DOMContentLoaded', async () => {
-  await initializeDashboard();
-  document.getElementById('loading-overlay').style.display = 'none';
-});
-
-        
-        // Close settings panel
-        document.querySelector('.settings-panel').classList.remove('open');
-        
-        // Show success message
-        alert('Settings saved successfully!');
-    } catch (error) {
-        console.error('Error saving settings:', error);
-        alert('Failed to save settings. Please check the console for details.');
-    }
 }
 
 // Reset settings to defaults
