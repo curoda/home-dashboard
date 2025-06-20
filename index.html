@@ -1065,6 +1065,11 @@ function saveSettings() {
     );
   }
 }
+        
+document.addEventListener('DOMContentLoaded', async () => {
+  await initializeDashboard();
+  document.getElementById('loading-overlay').style.display = 'none';
+});
 
 // Reset settings to defaults
 function resetSettings() {
