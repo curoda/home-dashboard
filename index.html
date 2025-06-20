@@ -546,6 +546,11 @@
     </style>
 </head>
 <body>
+    <div class="weather-now">
+  <div class="temp-display"></div>
+  <div class="feels-like"></div>
+</div>
+    <div class="hour-icon"><i class="fas fa-sun"></i></div>
     <div id="loading-overlay">
         <div class="spinner"></div>
     </div>
@@ -1008,7 +1013,24 @@ function saveSettings() {
         }
         
         // Reload data
-        initializeDashboard();
+        initializeDashboard();{
+  // 1) Apply settings to the page (you already have this)
+  loadSettings();
+
+  // 2) Load calendar events (you already have this)
+  await loadCalendarEvents();
+
+  // 3) NOW add the weather hook immediately below:
+  if (settings.widgets.weather) {
+    // fetch once on startup
+    await fetchAndDisplayWeather();
+
+    // then auto-refresh every X minutes
+    setInterval(fetchAndDisplayWeather,
+      settings.weather.refreshInterval * 60 * 1000
+    );
+  }
+}
         
         // Close settings panel
         document.querySelector('.settings-panel').classList.remove('open');
@@ -1454,6 +1476,140 @@ document.addEventListener('DOMContentLoaded', () => {
   updateClock();              // initial write
   setInterval(updateClock, 1000); // update every second
 });
+
+// 1️⃣ GEOCODE if needed
+async function resolveLatLon() {
+  if (settings.location.useBrowser && navigator.geolocation) {
+    return new Promise((res, rej) => {
+      navigator.geolocation.getCurrentPosition(
+        pos => res({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
+        err => rej(err),
+        { enableHighAccuracy: true }
+      );
+    });
+  } else {
+    // simple OWM geocoding: "City,State,Country"
+    const q = [
+      settings.location.city,
+      settings.location.state,
+      settings.location.country
+    ].filter(Boolean).join(',');
+    const geoUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(q)}&limit=1&appid=${settings.weather.apiKey}`;
+    const geoResp = await fetch(geoUrl);
+    const geoData = await geoResp.json();
+    if (!geoData[0]) throw new Error("Geocoding failed");
+    return { lat: geoData[0].lat, lon: geoData[0].lon };
+  }
+}
+
+// 2️⃣ FETCH & PARSE WEATHER
+async function fetchAndDisplayWeather() {
+  try {
+    const { lat, lon } = await resolveLatLon();
+    const oneCallUrl =
+      `https://api.openweathermap.org/data/2.5/onecall` +
+      `?lat=${lat}&lon=${lon}` +
+      `&units=${settings.weather.units}` +
+      `&exclude=minutely,alerts` +
+      `&appid=${settings.weather.apiKey}`;
+
+    const resp = await fetch(oneCallUrl);
+    if (!resp.ok) throw new Error("Weather API error");
+    const data = await resp.json();
+
+    updateCurrentWeather(data.current);
+    updateHourlyForecast(data.hourly);
+    updateDailyForecast(data.daily);
+  } catch (e) {
+    console.error("Weather error:", e);
+  }
+}
+
+// 3️⃣ UPDATE YOUR DOM
+
+function updateCurrentWeather(current) {
+  // e.g. 41° <i class="fas fa-sun"></i>
+  const weatherEl = document.querySelector('.weather-now .temp-display');
+  const feelsEl   = document.querySelector('.feels-like');
+  const iconCode  = current.weather[0].icon; // "01d", "02n", etc.
+
+  // choose a FontAwesome icon mapping or use OWM icon ending
+  const faIcon = {
+    "01d":"fa-sun","01n":"fa-moon",
+    "02d":"fa-cloud-sun","02n":"fa-cloud-moon",
+    "03d":"fa-cloud","03n":"fa-cloud",
+    "04d":"fa-cloud-meatball","04n":"fa-cloud-meatball",
+    "09d":"fa-cloud-showers-heavy","09n":"fa-cloud-showers-heavy",
+    "10d":"fa-cloud-sun-rain","10n":"fa-cloud-moon-rain",
+    "11d":"fa-bolt","11n":"fa-bolt",
+    "13d":"fa-snowflake","13n":"fa-snowflake",
+    "50d":"fa-smog","50n":"fa-smog"
+  }[iconCode] || "fa-question";
+
+  weatherEl.innerHTML = 
+    `${Math.round(current.temp)}° ` +
+    `<i class="fas ${faIcon}"></i>`;
+
+  feelsEl.textContent = `Feels like ${Math.round(current.feels_like)}°`;
+}
+
+function updateHourlyForecast(hourly) {
+  const slots = document.querySelectorAll('.hour-forecast');
+  slots.forEach((slot, i) => {
+    const hr = hourly[i];
+    if (!hr) return;
+
+    let date = new Date(hr.dt * 1000);
+    let hourLabel = date.getHours() % 12 || 12;
+    hourLabel += date.getHours() >= 12 ? "pm":"am";
+    slot.querySelector('.hour-label').textContent = hourLabel;
+
+    // icon
+    const iconCode = hr.weather[0].icon;
+    const faIcon = {
+      "01d":"fa-sun","01n":"fa-moon",
+      "02d":"fa-cloud-sun","02n":"fa-cloud-moon",
+      // etc same map as above…
+    }[iconCode] || "fa-question";
+    slot.querySelector('.hour-icon i')
+        .className = `fas ${faIcon}`;
+
+    slot.querySelector('.hour-precipitation')
+        .textContent = `${Math.round(hr.pop * 100)}%`;
+
+    slot.querySelector('.hour-temp')
+        .textContent = `${Math.round(hr.temp)}°`;
+  });
+}
+
+function updateDailyForecast(daily) {
+  const days = document.querySelectorAll('.day-forecast');
+  days.forEach((dayEl, idx) => {
+    const dayData = daily[idx+1]; // [0] is today, we want tomorrow+
+    if (!dayData) return;
+
+    const dt = new Date(dayData.dt * 1000);
+    const dd = dt.getDate().toString().padStart(2,'0');
+    const mon = dt.toLocaleString('en-US',{month:'long'});
+    const wd = dt.toLocaleString('en-US',{weekday:'long'});
+
+    dayEl.querySelector('.day-date').textContent = dd;
+    dayEl.querySelector('.day-name')
+         .textContent = `${mon}, ${wd}`;
+
+    // icon & high/low
+    const iconCode = dayData.weather[0].icon;
+    const faIcon   = /* same map as above */ "fa-cloud-sun";
+    dayEl.querySelector('.day-temp').innerHTML =
+      `<i class="fas ${faIcon}"></i> ` +
+      `${Math.round(dayData.temp.max)}°`;
+
+    // clear old events if any
+    // (you already handle events elsewhere)
+  });
+}
+
+        
     </script>
 </body>
 </html>
