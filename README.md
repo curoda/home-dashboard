@@ -4,8 +4,6 @@ A single-page, self-hosted web dashboard that shows **weather, calendar events, 
 
 ---
 
-## Demo
-
 ![Screenshot](sun%20favicon1.png)
 
 ---
