@@ -57,6 +57,11 @@
             font-size: 5rem;
             font-weight: bold;
         }
+
+        .time-display sup {
+            font-size: 1.6rem;
+            vertical-align: text-top;
+        }
         
         .date-display {
             font-size: 1.8rem;
@@ -191,29 +196,7 @@
             font-size: 1.2rem;
         }
         
-        .shopping-checkbox {
-            margin-right: 10px;
-        }
 
-        .shopping-new-item {
-            display: flex;
-            margin-top: 10px;
-        }
-
-        .shopping-new-item input {
-            flex: 1;
-            padding: 5px;
-            margin-right: 5px;
-        }
-
-        .delete-shopping-item {
-            margin-left: auto;
-            background: none;
-            border: none;
-            color: inherit;
-            cursor: pointer;
-            font-size: 1.2rem;
-        }
         
         .hourly-forecast {
             display: flex;
@@ -502,6 +485,11 @@
         @media screen and (min-width: 1920px) {
             .time-display {
                 font-size: 7rem;
+            }
+
+            .time-display sup {
+                font-size: 2.3rem;
+                vertical-align: text-top;
             }
             
             .date-display {
@@ -816,10 +804,6 @@
         <div class="shopping-list">
             <div class="shopping-title">Shopping</div>
             <div id="shopping-items"></div>
-            <div class="shopping-new-item">
-                <input type="text" id="shopping-add-input" placeholder="Add item">
-                <button id="shopping-add-btn" class="settings-button">Add</button>
-            </div>
         </div>
     </div>
 
@@ -1323,61 +1307,14 @@ function renderShoppingList(items) {
         const div = document.createElement('div');
         div.className = 'shopping-item';
 
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.className = 'shopping-checkbox';
-        checkbox.addEventListener('change', async () => {
-            await fetch(`https://api.todoist.com/rest/v2/tasks/${item.id}/close`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${settings.shopping.todoistToken}` }
-            });
-            loadShoppingList();
-        });
-
         const span = document.createElement('span');
         span.className = 'shopping-text';
         span.textContent = item.content;
-
-        const del = document.createElement('button');
-        del.className = 'delete-shopping-item';
-        del.textContent = '✕';
-        del.addEventListener('click', async () => {
-            await fetch(`https://api.todoist.com/rest/v2/tasks/${item.id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${settings.shopping.todoistToken}` }
-            });
-            loadShoppingList();
-        });
-
-        div.appendChild(checkbox);
         div.appendChild(span);
-        div.appendChild(del);
         container.appendChild(div);
     });
 }
 
-async function addShoppingItem() {
-    if (settings.shopping.service !== 'todoist') return;
-    const token = settings.shopping.todoistToken;
-    const projectId = await getTodoistProjectId();
-    const input = document.getElementById('shopping-add-input');
-    const title = input.value.trim();
-    if (!token || !projectId || !title) return;
-    try {
-        await fetch('https://api.todoist.com/rest/v2/tasks', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ content: title, project_id: projectId })
-        });
-        input.value = '';
-        loadShoppingList();
-    } catch (err) {
-        console.error('Error adding Todoist task:', err);
-    }
-}
 
 // Load calendar events
 async function loadCalendarEvents() {
@@ -1601,12 +1538,6 @@ document.getElementById('add-calendar').addEventListener('click', () => {
 
 document.getElementById('save-settings').addEventListener('click', saveSettings);
 document.getElementById('reset-settings').addEventListener('click', resetSettings);
-
-// Shopping list actions
-document.getElementById('shopping-add-btn').addEventListener('click', addShoppingItem);
-document.getElementById('shopping-add-input').addEventListener('keypress', e => {
-    if (e.key === 'Enter') addShoppingItem();
-});
 
 // Toggle manual location input based on checkbox
 document.getElementById('use-browser-location').addEventListener('change', function() {
