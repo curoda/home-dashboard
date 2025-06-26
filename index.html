@@ -1070,6 +1070,14 @@ function saveSettings() {
       settings.weather.refreshInterval * 60 * 1000
     );
   }
+  // 4) Load shopping list if using Todoist
+  if (settings.shopping.service === 'todoist') {
+    loadShoppingList();
+    setInterval(
+      loadShoppingList,
+      settings.shopping.refreshInterval * 60 * 1000
+    );
+  }
 }
         
 document.addEventListener('DOMContentLoaded', async () => {
@@ -1505,42 +1513,6 @@ async function loadCalendarEvents() {
     }
 }
 
-/* ------------------- NEW: Initialization + Hide Spinner -------------------- */
-
-// This function re-runs your data loading logic
-async function initializeDashboard() {
-  // 1) Apply settings to the UI
-  loadSettings();
-
-  // 2) Load calendar events
-  await loadCalendarEvents();
-
-  // 3) Load weather if enabled
-  if (settings.widgets.weather) {
-    await fetchAndDisplayWeather();
-    // schedule automatic refresh
-    setInterval(
-      fetchAndDisplayWeather,
-      settings.weather.refreshInterval * 60 * 1000
-    );
-  }
-
-  // 4) Load shopping list if using Todoist
-  if (settings.shopping.service === 'todoist') {
-    loadShoppingList();
-    setInterval(
-      loadShoppingList,
-      settings.shopping.refreshInterval * 60 * 1000
-    );
-  }
-}
-
-// On page load, run the initialization, then hide the spinner
-document.addEventListener('DOMContentLoaded', async () => {
-    await initializeDashboard();
-    // Hide the loading overlay
-    document.getElementById('loading-overlay').style.display = 'none';
-});
 
 /* ------------------- END -------------------- */
 
