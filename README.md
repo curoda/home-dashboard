@@ -20,7 +20,7 @@ cd home-dashboard
 
 # 3 · Configure (click the ⚙ gear icon)
 #    • Location (or enable “Use browser location”)
-#    • OpenWeatherMap API key
+#    • OpenWeatherMap API key (v3)
 #    • Optional iCal URLs for calendars
 #    • Optional Todoist token for the shopping-list widget
 #    • Dark-mode hours & refresh intervals
@@ -29,7 +29,7 @@ Settings are saved to `localStorage`, so they persist across reloads.
 
 ## Features
 
-- Live current weather & “feels like” temperature (OpenWeatherMap)
+- Live current weather & “feels like” temperature (OpenWeatherMap API v3)
 - Five-day hourly forecast
 - Multiple calendar feeds (iCal links or Google Calendar)
 - Shopping list pulled from **Todoist**
