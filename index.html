@@ -730,7 +730,7 @@
         <div class="big-day">28</div>
         <div class="today-label">Today</div>
         <div class="today-weather">
-            <i class="fas fa-cloud-sun"></i> 40° / 56°
+            <i class="fas fa-cloud-sun"></i> 56° / 40°
         </div>
     </div>
 
@@ -754,7 +754,7 @@
                         <div class="day-name">March, Saturday</div>
                     </div>
                     <div class="day-temp">
-                        <i class="fas fa-cloud"></i> 58°
+                        <i class="fas fa-cloud"></i> 58° / 43°
                     </div>
                 </div>
                 <div class="day-events">
@@ -776,7 +776,7 @@
                         <div class="day-name">March, Sunday</div>
                     </div>
                     <div class="day-temp">
-                        <i class="fas fa-cloud-sun"></i> 40°
+                        <i class="fas fa-cloud-sun"></i> 40° / 32°
                     </div>
                 </div>
                 <div class="day-events">
@@ -794,7 +794,7 @@
                         <div class="day-name">March, Monday</div>
                     </div>
                     <div class="day-temp">
-                        <i class="fas fa-cloud-sun"></i> 43°
+                        <i class="fas fa-cloud-sun"></i> 43° / 33°
                     </div>
                 </div>
                 <div class="day-events">
@@ -1682,7 +1682,7 @@ function updateTodayWeather(todayData) {
   }[iconCode] || "fa-question";
 
   todayWeatherEl.innerHTML = `<i class="fas ${faIcon}"></i> ` +
-    `${Math.round(todayData.temp.min)}° / ${Math.round(todayData.temp.max)}°`;
+    `${Math.round(todayData.temp.max)}° / ${Math.round(todayData.temp.min)}°`;
 }
 function updateDailyForecast(daily) {
   const days = document.querySelectorAll('.day-forecast');
@@ -1714,7 +1714,7 @@ function updateDailyForecast(daily) {
     }[iconCode] || "fa-question";
     dayEl.querySelector('.day-temp').innerHTML =
       `<i class="fas ${faIcon}"></i> ` +
-      `${Math.round(dayData.temp.max)}°`;
+      `${Math.round(dayData.temp.max)}° / ${Math.round(dayData.temp.min)}°`;
 
     // clear old events if any
     // (you already handle events elsewhere)
