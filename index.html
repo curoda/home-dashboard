@@ -1580,7 +1580,7 @@ async function fetchAndDisplayWeather() {
   try {
     const { lat, lon } = await resolveLatLon();
     const oneCallUrl =
-      `https://api.openweathermap.org/data/2.5/onecall` +
+      `https://api.openweathermap.org/data/3.0/onecall` +
       `?lat=${lat}&lon=${lon}` +
       `&units=${settings.weather.units}` +
       `&exclude=minutely,alerts` +
