@@ -179,6 +179,13 @@
             border-radius: 10px;
             margin-left: 10px;
             transition: background-color 1s;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #shopping-items {
+            transform-origin: top left;
+            transition: transform 0.2s;
         }
         
         body.dark-mode .shopping-list {
@@ -765,6 +772,56 @@
                         <span class="event-title cal-0">Golf lesson</span>
                     </div>
                 </div>
+                <div class="hourly-forecast">
+                    <div class="hour-forecast">
+                        <div class="hour-label">9am</div>
+                        <div class="hour-icon"><i class="fas fa-sun"></i></div>
+                        <div class="hour-precipitation">0%</div>
+                        <div class="hour-temp">45°</div>
+                    </div>
+                    <div class="hour-forecast">
+                        <div class="hour-label">10am</div>
+                        <div class="hour-icon"><i class="fas fa-sun"></i></div>
+                        <div class="hour-precipitation">0%</div>
+                        <div class="hour-temp">47°</div>
+                    </div>
+                    <div class="hour-forecast">
+                        <div class="hour-label">11am</div>
+                        <div class="hour-icon"><i class="fas fa-sun"></i></div>
+                        <div class="hour-precipitation">0%</div>
+                        <div class="hour-temp">48°</div>
+                    </div>
+                    <div class="hour-forecast">
+                        <div class="hour-label">12pm</div>
+                        <div class="hour-icon"><i class="fas fa-sun"></i></div>
+                        <div class="hour-precipitation">0%</div>
+                        <div class="hour-temp">50°</div>
+                    </div>
+                    <div class="hour-forecast">
+                        <div class="hour-label">1pm</div>
+                        <div class="hour-icon"><i class="fas fa-sun"></i></div>
+                        <div class="hour-precipitation">0%</div>
+                        <div class="hour-temp">51°</div>
+                    </div>
+                    <div class="hour-forecast">
+                        <div class="hour-label">2pm</div>
+                        <div class="hour-icon"><i class="fas fa-sun"></i></div>
+                        <div class="hour-precipitation">0%</div>
+                        <div class="hour-temp">52°</div>
+                    </div>
+                    <div class="hour-forecast">
+                        <div class="hour-label">3pm</div>
+                        <div class="hour-icon"><i class="fas fa-cloud-sun"></i></div>
+                        <div class="hour-precipitation">0%</div>
+                        <div class="hour-temp">53°</div>
+                    </div>
+                    <div class="hour-forecast">
+                        <div class="hour-label">4pm</div>
+                        <div class="hour-icon"><i class="fas fa-sun"></i></div>
+                        <div class="hour-precipitation">0%</div>
+                        <div class="hour-temp">54°</div>
+                    </div>
+                </div>
             </div>
 
             <div class="day-forecast">
@@ -859,6 +916,7 @@
             <div class="hour-temp">54°</div>
         </div>
     </div>
+
     <script>
 /* ------------------- Existing Code -------------------- */
 
@@ -1322,6 +1380,18 @@ function renderShoppingList(items) {
         div.appendChild(span);
         container.appendChild(div);
     });
+    fitShoppingList();
+}
+
+function fitShoppingList() {
+    const list = document.querySelector('.shopping-list');
+    const container = document.getElementById('shopping-items');
+    if (!list || !container) return;
+    container.style.transform = 'scale(1)';
+    const scale = Math.min(1, list.clientHeight / container.scrollHeight);
+    if (scale < 1) {
+        container.style.transform = `scale(${scale})`;
+    }
 }
 
 
