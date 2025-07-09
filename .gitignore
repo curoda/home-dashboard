@@ -1,0 +1,4 @@
+# Ignore user-specific environment files
+.env
+
+# Node modules or other ephemeral directories can be added here

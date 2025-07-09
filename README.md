@@ -21,17 +21,34 @@ cd home-dashboard
 # 3 · Configure (click the ⚙ gear icon)
 #    • Location (or enable “Use browser location”)
 #    • OpenWeatherMap API key (v3)
-#    • Optional iCal URLs for calendars
+#    • Optional Google Calendar URLs for calendars
 #    • Optional Todoist token for the shopping-list widget
 #    • Dark-mode hours & refresh intervals
 ```
 Settings are saved to `localStorage`, so they persist across reloads.
 
+## Environment Setup
+
+Copy `.env.example` to `.env` and fill in your own values.  The dashboard
+currently recognises these variables:
+
+- `WEATHER_API_KEY` – your OpenWeatherMap API key
+- `TODOIST_API_TOKEN` – Todoist token for the shopping list widget (optional)
+- `CALENDAR_URL_1` – URL of your first Google Calendar (or any iCal feed)
+
+```bash
+cp .env.example .env
+# Edit .env and add your secrets
+```
+
+Specify additional calendars by uncommenting `CALENDAR_URL_2` up to
+`CALENDAR_URL_5` in your `.env` file.
+
 ## Features
 
 - Live current weather & “feels like” temperature (OpenWeatherMap API v3)
 - Five-day hourly forecast
-- Multiple calendar feeds (iCal links or Google Calendar)
+- Multiple calendar feeds (Google Calendar or iCal links)
 - Shopping list pulled from **Todoist**
 - Dark-mode schedule & kiosk-mode toggle
 - Entirely client-side – drop it on any static host
