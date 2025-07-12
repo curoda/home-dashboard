@@ -185,7 +185,7 @@
 
         #shopping-items {
             transform-origin: top left;
-            transition: transform 0.2s;
+            transition: transform 0.2s, font-size 0.2s;
         }
         
         body.dark-mode .shopping-list {
@@ -1337,12 +1337,13 @@ function fitShoppingList() {
     const list = document.querySelector('.shopping-list');
     const container = document.getElementById('shopping-items');
     if (!list || !container) return;
-    container.style.transform = 'scale(1)';
-    const scale = Math.min(1, list.clientHeight / container.scrollHeight);
+    container.style.fontSize = '';
+    const scale = list.clientHeight / container.scrollHeight;
     if (scale < 1) {
-        container.style.transform = `scale(${scale})`;
+        container.style.fontSize = `${Math.round(scale * 100)}%`;
     }
 }
+window.addEventListener('resize', fitShoppingList);
 
 
 // Load calendar events
